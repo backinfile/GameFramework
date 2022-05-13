@@ -1,23 +1,26 @@
 package com.backinfile.GameFramework.core;
 
-import org.msgpack.core.MessagePacker;
-import org.msgpack.core.MessageUnpacker;
+import com.backinfile.GameFramework.core.serialize.Serializable;
 
-import java.io.IOException;
+import java.util.List;
 
-public class Call implements ISerializable{
-    private int portId;
-    private int objId;
+@Serializable
+public class Call{
+    public int portId;
+    public int objId;
+    public List<Integer> value;
+    public Integer value2;
+    public int[] intArr;
+    private int privateValue;
+    public float aFloat;
+    public double aDouble;
+    public byte aByte;
+    public boolean aBoolean;
+    public Boolean aBoolean2;
+    public long[] longs;
+    public long aLong;
 
-    @Override
-    public void pack(MessagePacker packer) throws IOException {
-        packer.packInt(portId);
-        packer.packInt(objId);
-    }
-
-    @Override
-    public void unpack(MessageUnpacker unpacker) throws IOException {
-        portId = unpacker.unpackInt();
-        objId = unpacker.unpackInt();
+    public void setPrivateValue(int privateValue) {
+        this.privateValue = privateValue;
     }
 }

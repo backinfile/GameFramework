@@ -1,4 +1,4 @@
-package com.backinfile.GameFramework.core;
+package com.backinfile.GameFramework.core.serialize;
 
 public class SerializeTag {
 
@@ -23,6 +23,7 @@ public class SerializeTag {
     public static final int FLOAT_ARRAY = 20;
     public static final int DOUBLE_ARRAY = 21;
     public static final int STRING_ARRAY = 22;
+    public static final int AUTO_SERIALIZE = 23;
 
     public static boolean isArrayType(int tag) {
         switch (tag) {
