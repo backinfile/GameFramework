@@ -84,7 +84,7 @@ public class SerializableManager {
 
                 CtClass ctClass = pool.makeClass("com.backinfile.GameFramework.serialize.gen." + simpleName + "Serializer");
                 {
-                    String header = Utils.format("public static void writeTo({0} obj, com.backinfile.GameFramework.core.serialize.OutputStream out)", typeName);
+                    String header = Utils.format("public static void writeTo({0} obj, {1} out)", typeName, OutputStream.class.getCanonicalName());
                     StringJoiner body = new StringJoiner("", "{", "}");
                     for(Field field: fields) {
                         body.add(getWriteObjString(field));
@@ -93,7 +93,7 @@ public class SerializableManager {
                     ctClass.addMethod(method);
                 }
                 {
-                    String header = Utils.format("public static {0} readFrom(com.backinfile.GameFramework.core.serialize.InputStream in)", typeName);
+                    String header = Utils.format("public static {0} readFrom({1} in)", typeName, InputStream.class.getCanonicalName());
                     StringJoiner body = new StringJoiner("", "{", "}");
                     body.add(Utils.format("{0} obj = new {0}();\n", typeName));
                     for(Field field: fields) {
