@@ -1,6 +1,9 @@
 import com.backinfile.GameFramework.core.Call;
 import com.backinfile.GameFramework.core.serialize.InputStream;
 import com.backinfile.GameFramework.core.serialize.SerializableManager;
+import com.backinfile.GameFramework.event.EventBase;
+import com.backinfile.GameFramework.event.EventEx;
+import com.backinfile.GameFramework.event.EventListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,5 +30,21 @@ public class Test {
 
         Call clone = SerializableManager.clone(call);
         System.out.println();
+    }
+
+    public static class EventGo extends EventBase {
+        public int value;
+    }
+
+    @EventListener(EventGo.class)
+    public static void onEventGo(EventGo eventGo) {
+        System.out.println("go go go");
+    }
+
+    @org.junit.jupiter.api.Test
+    public void TestEvent() {
+        EventEx.registerAll(Test.class.getClassLoader());
+
+        EventEx.fire(new EventGo());
     }
 }
