@@ -58,6 +58,9 @@ public class SerializableManager {
 
     private static void registerAllSerialize(Reflections reflections) {
 
+        int interCnt = 0;
+        int autoCnt = 0;
+
         // 接口方式
         for (Class<?> clazz : reflections.getSubTypesOf(ISerializable.class)) {
             if (Modifier.isAbstract(clazz.getModifiers()) || Modifier.isInterface(clazz.getModifiers())) {
@@ -69,6 +72,7 @@ public class SerializableManager {
                 constructor.setAccessible(true);
                 objectUnpackerMap.put(id, constructor);
 //                Log.serialize.info("find class:{}", clazz.getSimpleName());
+                interCnt ++;
             } catch (Exception e) {
                 Log.serialize.error(Utils.format("可能是ISerializable接口的实现{}没有空的构造函数", clazz.getSimpleName()), e);
             }
@@ -111,10 +115,12 @@ public class SerializableManager {
 
                 objectPackerMap.put(getCommonSerializeID(clazz), writeTo);
                 objectUnpackerMap.put(getCommonSerializeID(clazz), readFrom);
+                autoCnt++;
             } catch (Exception e) {
                 Log.serialize.error("build class error: " + clazz.getName(), e);
             }
         }
+        Log.serialize.info("register serialize obj over interface cnt:{}, auto cnt:{}", interCnt, autoCnt);
     }
 
     private static List<Field> getSerializableFields(Class<?> clazz) {
@@ -138,6 +144,7 @@ public class SerializableManager {
     }
 
     private static void registerAllEnum(Reflections reflections) {
+        int cnt = 0;
         for (Class<?> clazz : reflections.getSubTypesOf(Enum.class)) {
             if (Modifier.isAbstract(clazz.getModifiers())) {
                 continue;
@@ -147,10 +154,12 @@ public class SerializableManager {
                 method.setAccessible(true);
                 Object value = method.invoke(null);
                 objectUnpackerMap.put(getCommonSerializeID(clazz), value);
+                cnt ++;
             } catch (Throwable e) {
 //                Log.serialize.error("registerAllEnum error: " + clazz.getName());
             }
         }
+        Log.serialize.info("register enum over cnt:{}", cnt);
     }
 
     private static String getWriteObjString(Field field) {

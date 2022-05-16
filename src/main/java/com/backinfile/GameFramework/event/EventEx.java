@@ -13,8 +13,8 @@ public class EventEx {
     private static final Map<Class<? extends EventBase>, List<Listener>> listenerMap = new HashMap<>();
 
     private static class Listener {
-        private Method method;
-        private int priority;
+        private final Method method;
+        private final int priority;
 
         public Listener(Method method, int priority) {
             this.method = method;
@@ -43,7 +43,6 @@ public class EventEx {
         }
     }
 
-    @EventListener(EventBase.class)
     public static void registerAll(ClassLoader... classLoaders) {
         Reflections reflections = new Reflections(
                 new MethodAnnotationsScanner(),
@@ -59,6 +58,10 @@ public class EventEx {
                 continue;
             }
             EventListener annotation = method.getAnnotation(EventListener.class);
+            if (Modifier.isAbstract(annotation.value().getModifiers())) {
+                Log.event.warn("register {}.{} failed", method.getDeclaringClass().getName(), method.getName());
+                continue;
+            }
             if (method.getParameterCount() != 1) {
                 Log.event.warn("register {}.{} failed", method.getDeclaringClass().getName(), method.getName());
                 continue;
@@ -67,10 +70,11 @@ public class EventEx {
                 Log.event.warn("register {}.{} failed", method.getDeclaringClass().getName(), method.getName());
                 continue;
             }
-            listenerMap.computeIfAbsent(annotation.value(), keu -> new ArrayList<>()).add(new Listener(method, annotation.priority()));
+            listenerMap.computeIfAbsent(annotation.value(), key -> new ArrayList<>()).add(new Listener(method, annotation.priority()));
         }
         for (List<Listener> listeners : listenerMap.values()) {
             listeners.sort(Comparator.comparing(Listener::getPriority).reversed());
         }
+        Log.event.info("register over cnt:{}", listenerMap.values().stream().mapToInt(List::size).sum());
     }
 }
