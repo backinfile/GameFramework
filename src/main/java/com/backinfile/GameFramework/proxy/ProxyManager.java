@@ -88,7 +88,13 @@ public class ProxyManager {
         }
     }
 
+    private static boolean inited = false;
+
     public static void init(ClassLoader... classLoaders) {
+        if (inited) {
+            return;
+        }
+        inited = true;
 
         Reflections reflections = new Reflections(
                 new SubTypesScanner(false),
@@ -132,7 +138,7 @@ public class ProxyManager {
                     newClass.addMethod(overrideMethod);
 
 
-                    Log.core.info("replace {}", superMethod.getName());
+//                    Log.core.info("replace {}", superMethod.getName());
 
                     proxyClassMethodMap.computeIfAbsent(clazz, key -> new HashMap<>()).put(methodKey, method);
                 } catch (Exception e) {

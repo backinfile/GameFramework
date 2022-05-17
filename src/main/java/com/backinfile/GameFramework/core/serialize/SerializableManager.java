@@ -39,7 +39,14 @@ public class SerializableManager {
         return obj.getClass().getName().hashCode();
     }
 
+    private static boolean registered = false;
+
     public static void registerAll(ClassLoader... classLoaders) {
+        if (registered) {
+            return;
+        }
+        registered = true;
+        
         Reflections reflections = new Reflections(
                 new SubTypesScanner(false),
                 new TypeAnnotationsScanner(),

@@ -4,6 +4,7 @@ import com.backinfile.GameFramework.Log;
 import com.backinfile.GameFramework.proxy.AsyncObject;
 import com.backinfile.GameFramework.proxy.ProxyManager;
 import com.backinfile.support.func.Action0;
+import com.backinfile.support.timer.TimerQueue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +38,7 @@ public abstract class Port implements Delayed {
     private final ConcurrentLinkedQueue<Action0> postActionList = new ConcurrentLinkedQueue<>();
 
     private final Map<Long, AsyncObject> asyncObjectMap = new HashMap<>();
+    protected TimerQueue timerQueue = new TimerQueue(this::getTime);
 
     public Port(String portId) {
         this.portId = portId;
@@ -52,7 +54,7 @@ public abstract class Port implements Delayed {
     }
 
     public void startup() {
-        
+
     }
 
     public void pulse() {
@@ -69,6 +71,7 @@ public abstract class Port implements Delayed {
         terminal.pulse();
         // 心跳
         pulse();
+        timerQueue.update();
         // 执行post函数
         while (!postActionList.isEmpty()) {
             Action0 action = postActionList.poll();

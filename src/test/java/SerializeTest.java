@@ -1,14 +1,11 @@
 import com.backinfile.GameFramework.core.serialize.*;
-import com.backinfile.GameFramework.event.EventBase;
-import com.backinfile.GameFramework.event.EventEx;
-import com.backinfile.GameFramework.event.EventListener;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MainTest {
+public class SerializeTest {
 
     @Serializable
     public static class SerializableTestClass1 {
@@ -44,7 +41,7 @@ public class MainTest {
 
     @org.junit.jupiter.api.Test
     public void testSerializable() {
-        SerializableManager.registerAll();
+        SerializableManager.registerAll(SerializeTest.class.getClassLoader());
         SerializableTestClass2 obj = new SerializableTestClass2();
         obj.anInt = 1243;
         obj.aFloat = 1.234f;
@@ -72,30 +69,5 @@ public class MainTest {
         assert obj.serializableTestClass1.aLong == clone.serializableTestClass1.aLong;
         assert obj.integer.equals(clone.integer);
         assert obj.serializableTestClass3.value == clone.serializableTestClass3.value;
-    }
-
-    public static class EventGo extends EventBase {
-        public int value;
-
-        public EventGo(int value) {
-            this.value = value;
-        }
-    }
-
-    @EventListener(EventGo.class)
-    public static void onEventGo(EventGo eventGo) {
-        eventCatching = true;
-        assert eventGo.value == 123;
-    }
-
-    private static boolean eventCatching = false;
-
-    @org.junit.jupiter.api.Test
-    public void testEvent() {
-        EventEx.registerAll(MainTest.class.getClassLoader());
-
-        EventEx.fire(new EventGo(123));
-
-        assert eventCatching;
     }
 }
