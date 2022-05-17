@@ -9,7 +9,10 @@ import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 /**
@@ -47,6 +50,10 @@ public class SerializableManager {
     }
 
     public static <T> T clone(T obj) {
+        if (obj == null || obj.getClass().getSuperclass() == Number.class || obj.getClass() == String.class) {
+            return obj;
+        }
+
         OutputStream outputStream = new OutputStream();
         outputStream.write(obj);
         outputStream.close();
@@ -72,7 +79,7 @@ public class SerializableManager {
                 constructor.setAccessible(true);
                 objectUnpackerMap.put(id, constructor);
 //                Log.serialize.info("find class:{}", clazz.getSimpleName());
-                interCnt ++;
+                interCnt++;
             } catch (Exception e) {
                 Log.serialize.error(Utils.format("可能是ISerializable接口的实现{}没有空的构造函数", clazz.getSimpleName()), e);
             }
@@ -80,7 +87,7 @@ public class SerializableManager {
 
         // 自动挂载方式
         ClassPool pool = ClassPool.getDefault();
-        for(Class<?> clazz: reflections.getTypesAnnotatedWith(Serializable.class)) {
+        for (Class<?> clazz : reflections.getTypesAnnotatedWith(Serializable.class)) {
             try {
                 String typeName = clazz.getName();
                 String simpleName = clazz.getSimpleName();
@@ -90,7 +97,7 @@ public class SerializableManager {
                 {
                     String header = Utils.format("public static void writeTo({0} obj, {1} out)", typeName, OutputStream.class.getCanonicalName());
                     StringJoiner body = new StringJoiner("", "{", "}");
-                    for(Field field: fields) {
+                    for (Field field : fields) {
                         body.add(getWriteObjString(field));
                     }
                     CtMethod method = CtMethod.make(header + body, ctClass);
@@ -100,7 +107,7 @@ public class SerializableManager {
                     String header = Utils.format("public static {0} readFrom({1} in)", typeName, InputStream.class.getCanonicalName());
                     StringJoiner body = new StringJoiner("", "{", "}");
                     body.add(Utils.format("{0} obj = new {0}();\n", typeName));
-                    for(Field field: fields) {
+                    for (Field field : fields) {
                         body.add(getReadObjString(field));
                     }
                     body.add(Utils.format("return obj;"));
@@ -125,7 +132,7 @@ public class SerializableManager {
 
     private static List<Field> getSerializableFields(Class<?> clazz) {
         List<Field> result = new ArrayList<>();
-        for(Field field: clazz.getFields()) {
+        for (Field field : clazz.getFields()) {
             if (!Modifier.isPublic(field.getModifiers())) {
                 continue;
             }
@@ -154,7 +161,7 @@ public class SerializableManager {
                 method.setAccessible(true);
                 Object value = method.invoke(null);
                 objectUnpackerMap.put(getCommonSerializeID(clazz), value);
-                cnt ++;
+                cnt++;
             } catch (Throwable e) {
 //                Log.serialize.error("registerAllEnum error: " + clazz.getName());
             }
@@ -187,7 +194,7 @@ public class SerializableManager {
         Class<?> clazz = field.getType();
         if (clazz == int.class) {
             return Utils.format("obj.{0} = in.getUnpacker().unpackInt(); \n", fieldName);
-        }  else if (clazz == long.class) {
+        } else if (clazz == long.class) {
             return Utils.format("obj.{0} = in.getUnpacker().unpackLong(); \n", fieldName);
         } else if (clazz == double.class) {
             return Utils.format("obj.{0} = in.getUnpacker().unpackDouble(); \n", fieldName);
