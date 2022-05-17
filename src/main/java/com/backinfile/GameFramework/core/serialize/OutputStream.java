@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.core.serialize;
 
-import com.backinfile.GameFramework.Log;
+import com.backinfile.GameFramework.LogCore;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 
@@ -27,7 +27,7 @@ public class OutputStream {
             writeObject(obj);
             packer.flush();
         } catch (Exception e) {
-            Log.serialize.error("writeObject failed", e);
+            LogCore.serialize.error("writeObject failed", e);
         }
     }
 
@@ -161,7 +161,7 @@ public class OutputStream {
             try {
                 method.invoke(null, obj, this);
             } catch (Exception e) {
-                Log.serialize.error("packSerialize error", e);
+                LogCore.serialize.error("packSerialize error", e);
             }
         } else {
             throw new Exception("无法序列化" + obj.getClass().getName());

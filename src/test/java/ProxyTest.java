@@ -1,12 +1,13 @@
-import com.backinfile.GameFramework.async.Task;
 import com.backinfile.GameFramework.core.Node;
 import com.backinfile.GameFramework.core.Port;
 import com.backinfile.GameFramework.core.serialize.SerializableManager;
 import com.backinfile.GameFramework.proxy.AsyncObject;
 import com.backinfile.GameFramework.proxy.Proxy;
 import com.backinfile.GameFramework.proxy.ProxyManager;
+import com.backinfile.GameFramework.proxy.Task;
 import com.backinfile.support.Time2;
 import com.backinfile.support.Utils;
+import com.ea.async.Async;
 import org.junit.jupiter.api.Test;
 
 public class ProxyTest {
@@ -24,25 +25,24 @@ public class ProxyTest {
                     System.out.println("finish");
                 });
             });
+            super.startup();
         }
     }
 
-    public static class Port2 extends Port {
-        public Port2() {
-            super("Port2");
-        }
-
-        @Override
-        public void startup() {
-            add(new TmpAsyncObj());
-        }
-    }
 
     public static class TmpAsyncObj extends AsyncObject {
         public Task<Void> testTask() {
             System.out.println("in testTask " + this.getClass().getName());
+
+            int value = Async.await(doSomething());
+            assert value == 1243;
+
             ok = true;
             return Task.completedTask();
+        }
+
+        private Task<Integer> doSomething() {
+            return Task.completedTask(1243);
         }
     }
 
@@ -50,13 +50,14 @@ public class ProxyTest {
 
     @Test
     public void testProxy() {
-        ProxyManager.init(ProxyTest.class.getClassLoader());
+        Async.init();
+        ProxyManager.registerAll(ProxyTest.class.getClassLoader());
         SerializableManager.registerAll(ProxyTest.class.getClassLoader());
 
         Node node = new Node();
-        node.addPort(new Port1());
-        node.addPort(new Port2());
+        node.addPort(new Port1(), Port.of(new TmpAsyncObj()));
         node.startUp();
+        node.waitAllPortStartupFinish();
         Utils.sleep(Time2.SEC * 2);
         node.abort();
         node.join();

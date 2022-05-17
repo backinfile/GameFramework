@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.core;
 
-import com.backinfile.GameFramework.Log;
+import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.core.serialize.InputStream;
 import com.backinfile.GameFramework.core.serialize.OutputStream;
 
@@ -45,7 +45,7 @@ public class Result implements IResult {
             return null;
         }
         if (index < 0 || index >= results.length) {
-            Log.core.error("getResult", new ArrayIndexOutOfBoundsException(""));
+            LogCore.core.error("getResult", new ArrayIndexOutOfBoundsException(""));
             return null;
         }
         return (T) results[index];

@@ -1,9 +1,8 @@
 package com.backinfile.GameFramework.event;
 
-import com.backinfile.GameFramework.Log;
-import com.backinfile.GameFramework.core.serialize.SerializableManager;
+import com.backinfile.GameFramework.LogCore;
 import org.reflections.Reflections;
-import org.reflections.scanners.*;
+import org.reflections.scanners.MethodAnnotationsScanner;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -38,12 +37,19 @@ public class EventEx {
             try {
                 listener.getMethod().invoke(null, eventBase);
             } catch (Exception e) {
-                Log.event.error("error in fire Event " + eventBase.getClass().getName(), e);
+                LogCore.event.error("error in fire Event " + eventBase.getClass().getName(), e);
             }
         }
     }
 
+    private static boolean registered = false;
+
     public static void registerAll(ClassLoader... classLoaders) {
+        if (registered) {
+            return;
+        }
+        registered = true;
+        
         Reflections reflections = new Reflections(
                 new MethodAnnotationsScanner(),
                 EventEx.class.getClassLoader(),
@@ -59,15 +65,15 @@ public class EventEx {
             }
             EventListener annotation = method.getAnnotation(EventListener.class);
             if (Modifier.isAbstract(annotation.value().getModifiers())) {
-                Log.event.warn("register {}.{} failed", method.getDeclaringClass().getName(), method.getName());
+                LogCore.event.warn("register {}.{} failed", method.getDeclaringClass().getName(), method.getName());
                 continue;
             }
             if (method.getParameterCount() != 1) {
-                Log.event.warn("register {}.{} failed", method.getDeclaringClass().getName(), method.getName());
+                LogCore.event.warn("register {}.{} failed", method.getDeclaringClass().getName(), method.getName());
                 continue;
             }
             if (method.getParameterTypes()[0] != annotation.value()) {
-                Log.event.warn("register {}.{} failed", method.getDeclaringClass().getName(), method.getName());
+                LogCore.event.warn("register {}.{} failed", method.getDeclaringClass().getName(), method.getName());
                 continue;
             }
             listenerMap.computeIfAbsent(annotation.value(), key -> new ArrayList<>()).add(new Listener(method, annotation.priority()));
@@ -75,6 +81,6 @@ public class EventEx {
         for (List<Listener> listeners : listenerMap.values()) {
             listeners.sort(Comparator.comparing(Listener::getPriority).reversed());
         }
-        Log.event.info("register over cnt:{}", listenerMap.values().stream().mapToInt(List::size).sum());
+        LogCore.event.info("register over cnt:{}", listenerMap.values().stream().mapToInt(List::size).sum());
     }
 }

@@ -2,6 +2,9 @@ package com.backinfile.GameFramework.proxy;
 
 import com.backinfile.GameFramework.core.Port;
 
+/**
+ * 此类中所有public的返回Task的函数会自动注册为代理函数
+ */
 public abstract class AsyncObject {
     private final long objId;
     private Port port;

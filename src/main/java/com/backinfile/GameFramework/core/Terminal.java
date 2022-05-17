@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.core;
 
-import com.backinfile.GameFramework.Log;
+import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.proxy.ProxyManager;
 import com.backinfile.support.Time2;
 import com.backinfile.support.func.Action1;
@@ -81,7 +81,7 @@ public class Terminal implements ITerminal {
             }
         }
         for (long id : toRemove) {
-            Log.core.warn("time out, clear rpc wait callId:{} port:{}", id, mPort.getPortId());
+            LogCore.core.warn("time out, clear rpc wait callId:{} port:{}", id, mPort.getPortId());
             WaitResult waitResult = waitingResponseList.remove(id);
             for (WaitResult.Callback callback : waitResult.callbackHandlers) {
                 try {
@@ -89,7 +89,7 @@ public class Terminal implements ITerminal {
                     result.setErrorString("rpc time out");
                     callback.action.invoke(result);
                 } catch (Exception e) {
-                    Log.core.error("run rpc result callbackHandler function error", e);
+                    LogCore.core.error("run rpc result callbackHandler function error", e);
                 }
             }
         }
@@ -125,15 +125,15 @@ public class Terminal implements ITerminal {
             if (call == null)
                 break;
             try {
-                if (call.type == ConstRPC.RPC_TYPE_CALL) {
+                if (call.type == Call.RPC_TYPE_CALL) {
                     invoke(call);
-                } else if (call.type == ConstRPC.RPC_TYPE_CALL_RETURN) {
+                } else if (call.type == Call.RPC_TYPE_CALL_RETURN) {
                     processCallReturn(call);
                 } else {
-                    Log.core.error("unknown rpc call type {}", call.type);
+                    LogCore.core.error("unknown rpc call type {}", call.type);
                 }
             } catch (Exception e) {
-                Log.core.error("error in execute inCall", e);
+                LogCore.core.error("error in execute inCall", e);
             }
         }
     }
@@ -160,7 +160,7 @@ public class Terminal implements ITerminal {
                 result.setErrorString(call.errorString);
                 callback.action.invoke(result);
             } catch (Exception e) {
-                Log.core.error("run rpc result callbackHandler function error", e);
+                LogCore.core.error("run rpc result callbackHandler function error", e);
             }
         }
     }

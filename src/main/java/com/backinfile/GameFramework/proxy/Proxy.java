@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.proxy;
 
-import com.backinfile.GameFramework.Log;
+import com.backinfile.GameFramework.LogCore;
 import com.backinfile.support.SysException;
 
 import java.lang.reflect.Constructor;
@@ -44,7 +44,7 @@ public class Proxy {
             ((AsyncObject) obj).targetPort = ProxyManager.targetPortMap.get(clazz);
             return (T) obj;
         } catch (Exception e) {
-            Log.core.error("error in create proxy instance of " + clazz.getName(), e);
+            LogCore.core.error("error in create proxy instance of " + clazz.getName(), e);
         }
         return null;
     }

@@ -1,7 +1,6 @@
 package com.backinfile.GameFramework.proxy;
 
-import com.backinfile.GameFramework.Log;
-import com.backinfile.GameFramework.async.Task;
+import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.core.Call;
 import com.backinfile.GameFramework.core.CallPoint;
 import com.backinfile.GameFramework.core.Node;
@@ -56,12 +55,12 @@ public class ProxyManager {
     public static void handleRequest(Port port, Call call) {
         AsyncObject asyncObj = port.getAsyncObj(call.to.objId);
         if (asyncObj == null) {
-            Log.core.error("not find AsyncObject of " + call);
+            LogCore.core.error("not find AsyncObject of " + call);
             return;
         }
         Map<Integer, Method> methodMap = proxyClassMethodMap.get(asyncObj.getClass());
         if (methodMap == null || !methodMap.containsKey(call.method)) {
-            Log.core.error("not find method of " + asyncObj.getClass().getName() + " in " + call);
+            LogCore.core.error("not find method of " + asyncObj.getClass().getName() + " in " + call);
             return;
         }
         Method method = methodMap.get(call.method);
@@ -71,30 +70,30 @@ public class ProxyManager {
                 if (ex != null) {
                     Call callReturn = call.newErrorReturn(ex.getMessage());
                     Node.Instance.handleCall(callReturn);
-                    Log.core.warn("error in invoke origin method " + method, ex);
+                    LogCore.core.warn("error in invoke origin method " + method, ex);
                 } else {
                     Call callReturn = call.newCallReturn(new Object[]{obj});
                     Node.Instance.handleCall(callReturn);
                 }
             });
         } catch (Exception e) {
-            Log.core.error("error in invoke origin method " + method, e);
+            LogCore.core.error("error in invoke origin method " + method, e);
         }
     }
 
-    public static void register(Class<? extends AsyncObject> clazz, String targetPort) {
+    public static void registerPortId(Class<? extends AsyncObject> clazz, String targetPort) {
         if (!ProxyManager.targetPortMap.containsKey(clazz)) {
             ProxyManager.targetPortMap.put(clazz, targetPort);
         }
     }
 
-    private static boolean inited = false;
+    private static boolean registered = false;
 
-    public static void init(ClassLoader... classLoaders) {
-        if (inited) {
+    public static void registerAll(ClassLoader... classLoaders) {
+        if (registered) {
             return;
         }
-        inited = true;
+        registered = true;
 
         Reflections reflections = new Reflections(
                 new SubTypesScanner(false),
@@ -112,7 +111,7 @@ public class ProxyManager {
             try {
                 ctClass = pool.get(clazz.getName());
             } catch (Exception e) {
-                Log.core.error("error in get CtClass of " + clazz.getName(), e);
+                LogCore.core.error("error in get CtClass of " + clazz.getName(), e);
                 continue;
             }
             CtClass newClass = pool.makeClass("com.backinfile.GameFramework.proxy.gen." + clazz.getSimpleName() + "Proxy", ctClass);
@@ -142,7 +141,7 @@ public class ProxyManager {
 
                     proxyClassMethodMap.computeIfAbsent(clazz, key -> new HashMap<>()).put(methodKey, method);
                 } catch (Exception e) {
-                    Log.core.error("error in replace method content of " + clazz.getName(), e);
+                    LogCore.core.error("error in replace method content of " + clazz.getName(), e);
                 }
             }
 
@@ -158,7 +157,7 @@ public class ProxyManager {
                 }
                 proxyClassMap.put(clazz, declaredConstructor);
             } catch (Exception e) {
-                Log.core.error("error in get constructor of " + clazz.getName(), e);
+                LogCore.core.error("error in get constructor of " + clazz.getName(), e);
             }
 
         }

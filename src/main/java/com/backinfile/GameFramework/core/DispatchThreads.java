@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.core;
 
-import com.backinfile.GameFramework.Log;
+import com.backinfile.GameFramework.LogCore;
 import com.backinfile.support.Utils;
 import com.backinfile.support.func.Action0;
 
@@ -46,7 +46,7 @@ public class DispatchThreads {
             thread.setDaemon(true);
             threads.add(thread);
             thread.start();
-            Log.game.info("Thread {} start", thread.getName());
+            LogCore.core.info("Thread {} start", thread.getName());
         }
     }
 
@@ -55,25 +55,25 @@ public class DispatchThreads {
             try {
                 start.invoke();
             } catch (Exception e) {
-                Log.core.error("线程运行start出错", e);
+                LogCore.core.error("线程运行start出错", e);
             }
         }
         while (!threadAbort) {
             try {
                 run.invoke();
             } catch (Exception e) {
-                Log.core.error("线程运行run出错", e);
+                LogCore.core.error("线程运行run出错", e);
             }
         }
         if (dispose != null) {
             try {
                 dispose.invoke();
             } catch (Exception e) {
-                Log.core.error("线程运行dispose出错", e);
+                LogCore.core.error("线程运行dispose出错", e);
             }
         }
         abortedNum.incrementAndGet();
-        Log.game.info("Thread {} finish", Thread.currentThread().getName());
+        LogCore.core.info("Thread {} finish", Thread.currentThread().getName());
     }
 
     public void abort() {

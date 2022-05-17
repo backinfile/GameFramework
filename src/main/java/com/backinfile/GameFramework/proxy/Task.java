@@ -1,10 +1,11 @@
-package com.backinfile.GameFramework.async;
+package com.backinfile.GameFramework.proxy;
 
 import com.backinfile.support.SysException;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class Task<T> extends CompletableFuture<T> {
     private boolean succeed = false;
@@ -22,18 +23,27 @@ public class Task<T> extends CompletableFuture<T> {
     }
 
     @Override
-    public T get(long timeout, TimeUnit unit) {
-        throw new SysException("不允许同步调用");
+    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        if (!this.succeed) {
+            throw new SysException("不允许同步调用");
+        }
+        return super.get(timeout, unit);
     }
 
     @Override
     public T getNow(T valueIfAbsent) {
-        throw new SysException("不允许同步调用");
+        if (!this.succeed) {
+            throw new SysException("不允许同步调用");
+        }
+        return super.getNow(valueIfAbsent);
     }
 
     @Override
     public T join() {
-        throw new SysException("不允许同步调用");
+        if (!this.succeed) {
+            throw new SysException("不允许同步调用");
+        }
+        return super.join();
     }
 
     @Override

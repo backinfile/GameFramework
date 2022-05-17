@@ -4,11 +4,11 @@ import com.backinfile.GameFramework.core.serialize.Serializable;
 
 import java.util.Arrays;
 
-import static com.backinfile.GameFramework.core.ConstRPC.RPC_TYPE_CALL;
-import static com.backinfile.GameFramework.core.ConstRPC.RPC_TYPE_CALL_RETURN;
-
 @Serializable
 public class Call {
+    public static final int RPC_TYPE_CALL = 0;
+    public static final int RPC_TYPE_CALL_RETURN = 1; // 与回复的call同id
+    
     public long id;
     public CallPoint to;
     public CallPoint from;

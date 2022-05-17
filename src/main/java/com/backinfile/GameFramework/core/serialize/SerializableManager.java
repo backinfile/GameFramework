@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.core.serialize;
 
-import com.backinfile.GameFramework.Log;
+import com.backinfile.GameFramework.LogCore;
 import com.backinfile.support.Utils;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -46,7 +46,7 @@ public class SerializableManager {
             return;
         }
         registered = true;
-        
+
         Reflections reflections = new Reflections(
                 new SubTypesScanner(false),
                 new TypeAnnotationsScanner(),
@@ -88,7 +88,7 @@ public class SerializableManager {
 //                Log.serialize.info("find class:{}", clazz.getSimpleName());
                 interCnt++;
             } catch (Exception e) {
-                Log.serialize.error(Utils.format("可能是ISerializable接口的实现{}没有空的构造函数", clazz.getSimpleName()), e);
+                LogCore.serialize.error(Utils.format("可能是ISerializable接口的实现{}没有空的构造函数", clazz.getSimpleName()), e);
             }
         }
 
@@ -131,10 +131,10 @@ public class SerializableManager {
                 objectUnpackerMap.put(getCommonSerializeID(clazz), readFrom);
                 autoCnt++;
             } catch (Exception e) {
-                Log.serialize.error("build class error: " + clazz.getName(), e);
+                LogCore.serialize.error("build class error: " + clazz.getName(), e);
             }
         }
-        Log.serialize.info("register serialize obj over interface cnt:{}, auto cnt:{}", interCnt, autoCnt);
+        LogCore.serialize.info("register serialize obj over interface cnt:{}, auto cnt:{}", interCnt, autoCnt);
     }
 
     private static List<Field> getSerializableFields(Class<?> clazz) {
@@ -173,7 +173,7 @@ public class SerializableManager {
 //                Log.serialize.error("registerAllEnum error: " + clazz.getName());
             }
         }
-        Log.serialize.info("register enum over cnt:{}", cnt);
+        LogCore.serialize.info("register enum over cnt:{}", cnt);
     }
 
     private static String getWriteObjString(Field field) {

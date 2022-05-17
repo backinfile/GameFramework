@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.core;
 
-import com.backinfile.GameFramework.Log;
+import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.core.serialize.SerializableManager;
 import com.backinfile.support.SysException;
 import com.backinfile.support.Utils;
@@ -36,15 +36,11 @@ public class Node {
         Instance = this;
     }
 
-    public static Node getInstance() {
-        return Instance;
-    }
-
     public void startUp() {
         String name = nodeId;
         Thread.currentThread().setName("Node-" + name);
-        Log.core.info("=============== node {} 启动 ===============", nodeId);
-        
+        LogCore.core.info("=============== node {} 启动 ===============", nodeId);
+
         dispatchThreads = new DispatchThreads(("Node-" + name) + "-DispatchThread", THREAD_NUM,
                 null, this::dispatchRun, null);
         dispatchThreads.start();
@@ -56,7 +52,7 @@ public class Node {
 
 
     public void abort() {
-        Log.core.info("node {} 中断开始.....", nodeId);
+        LogCore.core.info("node {} 中断开始.....", nodeId);
         dispatchThreads.abort();
         mainThread.abort();
     }
@@ -65,16 +61,28 @@ public class Node {
         while (!dispatchThreads.isAborted() || !mainThread.isAborted()) {
             Utils.sleep(100);
         }
-        Log.core.info("=============== node {} 关闭 ===============", nodeId);
+        LogCore.core.info("=============== node {} 关闭 ===============", nodeId);
     }
 
-    public void addPort(Port port) {
-        this.post(() -> {
-            Log.core.info("add port {}", port.getClass().getSimpleName());
-            port.setNode(this);
+    public void waitAllPortStartupFinish() {
+        while (!allPorts.values().stream().allMatch(port -> port.startupOver)) {
+            Utils.sleep(1000);
+            LogCore.core.info("waiting all port startup...");
+        }
+    }
+
+    public void addPort(Port... ports) {
+        for (Port port : ports) {
             allPorts.put(port.getPortId(), port);
-            port.startup();
-            portsWaitForRun.add(port);
+            port.setNode(this);
+        }
+
+        this.post(() -> {
+            for (Port port : ports) {
+                LogCore.core.info("add port {} of class {}", port.getPortId(), port.getClass().getName());
+                port.startup();
+                portsWaitForRun.add(port);
+            }
         });
     }
 
@@ -99,7 +107,7 @@ public class Node {
             try {
                 action0.invoke();
             } catch (Exception e) {
-                Log.core.error("error in invoke postAction", e);
+                LogCore.core.error("error in invoke postAction", e);
             }
         }
     }
@@ -150,7 +158,7 @@ public class Node {
         // 发送到此node的消息
         Port port = getPort(call.to.portID);
         if (port == null) {
-            Log.core.error("此call发送到未知port(" + call.to.portID + ")，已忽略", new SysException(""));
+            LogCore.core.error("此call发送到未知port(" + call.to.portID + ")，已忽略", new SysException(""));
             return;
         }
         port.getTerminal().addCall(SerializableManager.clone(call));

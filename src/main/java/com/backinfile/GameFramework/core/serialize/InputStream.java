@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.core.serialize;
 
-import com.backinfile.GameFramework.Log;
+import com.backinfile.GameFramework.LogCore;
 import com.backinfile.support.SysException;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -27,7 +27,7 @@ public class InputStream {
         try {
             return (T) readObject();
         } catch (Exception e) {
-            Log.serialize.error("read obj failed", e);
+            LogCore.serialize.error("read obj failed", e);
         }
         return null;
     }
@@ -121,7 +121,7 @@ public class InputStream {
                 if (enumValues != null) {
                     return enumValues[ord];
                 } else {
-                    Log.serialize.error("未能反序列化枚举类型 {}", id);
+                    LogCore.serialize.error("未能反序列化枚举类型 {}", id);
                     return null;
                 }
             }
@@ -156,7 +156,7 @@ public class InputStream {
                     serializable.readFrom(this);
                     return serializable;
                 } else {
-                    Log.serialize.error("未能反序列化" + id, new SysException());
+                    LogCore.serialize.error("未能反序列化" + id, new SysException());
                     return null;
                 }
             }
@@ -164,13 +164,13 @@ public class InputStream {
                 int id = unpacker.unpackInt();
                 Method method = SerializableManager.getUnpackerObj(id);
                 if (method == null) {
-                    Log.serialize.error("未能反序列化" + id, new SysException());
+                    LogCore.serialize.error("未能反序列化" + id, new SysException());
                     return null;
                 }
                 try {
                     return method.invoke(null, this);
                 } catch (Exception e) {
-                    Log.serialize.error("unpackSerialize error", e);
+                    LogCore.serialize.error("unpackSerialize error", e);
                 }
                 return null;
             }

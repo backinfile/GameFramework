@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.core;
 
-import com.backinfile.GameFramework.Log;
+import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.proxy.AsyncObject;
 import com.backinfile.GameFramework.proxy.ProxyManager;
 import com.backinfile.support.func.Action0;
@@ -40,6 +40,8 @@ public abstract class Port implements Delayed {
     private final Map<Long, AsyncObject> asyncObjectMap = new HashMap<>();
     protected TimerQueue timerQueue = new TimerQueue(this::getTime);
 
+    protected boolean startupOver = false; // 初始化结束
+
     public Port(String portId) {
         this.portId = portId;
     }
@@ -54,7 +56,7 @@ public abstract class Port implements Delayed {
     }
 
     public void startup() {
-
+        startupOver = true;
     }
 
     public void pulse() {
@@ -78,7 +80,7 @@ public abstract class Port implements Delayed {
             try {
                 action.invoke();
             } catch (Exception e) {
-                Log.core.error("error in post action", e);
+                LogCore.core.error("error in post action", e);
             }
         }
         // 设置当前port
@@ -97,7 +99,7 @@ public abstract class Port implements Delayed {
             try {
                 action.invoke();
             } catch (Exception e) {
-                Log.core.error("error in post action", e);
+                LogCore.core.error("error in post action", e);
             }
         }
         curPort.set(null);
@@ -174,7 +176,7 @@ public abstract class Port implements Delayed {
 
     // 非线程安全
     protected void addAsyncObj(AsyncObject obj) {
-        ProxyManager.register(obj.getClass(), getPortId());
+        ProxyManager.registerPortId(obj.getClass(), getPortId());
 
         asyncObjectMap.put(obj.getObjId(), obj);
         obj.onAttach(this);
@@ -192,5 +194,16 @@ public abstract class Port implements Delayed {
     // 非线程安全
     public AsyncObject getAsyncObj(long id) {
         return asyncObjectMap.get(id);
+    }
+
+
+    public static Port of(AsyncObject asyncObject) {
+        return new Port(asyncObject.getClass().getSimpleName() + "Port") {
+            @Override
+            public void startup() {
+                add(asyncObject);
+                super.startup();
+            }
+        };
     }
 }
