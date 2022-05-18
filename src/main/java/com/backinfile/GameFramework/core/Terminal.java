@@ -2,7 +2,7 @@ package com.backinfile.GameFramework.core;
 
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.proxy.ProxyManager;
-import com.backinfile.support.Time2;
+import com.backinfile.support.Time;
 import com.backinfile.support.func.Action1;
 
 import java.util.*;
@@ -22,7 +22,7 @@ public class Terminal implements ITerminal {
     private final Port mPort;
 
     // 监听失效时间
-    public static final long CALL_EXPIRE_TIME = 30 * Time2.SEC;
+    public static final long CALL_EXPIRE_TIME = 30 * Time.SEC;
 
     public Terminal(Node node, Port port) {
         this.mPort = port;
@@ -100,7 +100,7 @@ public class Terminal implements ITerminal {
         WaitResult waitResult = waitingResponseList.get(callId);
         if (waitResult == null) {
             waitResult = new WaitResult();
-            waitResult.expireTime = Time2.getCurMillis() + CALL_EXPIRE_TIME;
+            waitResult.expireTime = Time.getCurMillis() + CALL_EXPIRE_TIME;
             waitingResponseList.put(callId, waitResult);
         }
         waitResult.addCallback(action);
@@ -113,7 +113,7 @@ public class Terminal implements ITerminal {
             waitResult = new WaitResult();
             waitingResponseList.put(callId, waitResult);
         }
-        waitResult.expireTime = Time2.getCurMillis() + timeout;
+        waitResult.expireTime = Time.getCurMillis() + timeout;
     }
 
     /**

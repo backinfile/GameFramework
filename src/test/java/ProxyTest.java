@@ -5,7 +5,7 @@ import com.backinfile.GameFramework.proxy.AsyncObject;
 import com.backinfile.GameFramework.proxy.Proxy;
 import com.backinfile.GameFramework.proxy.ProxyManager;
 import com.backinfile.GameFramework.proxy.Task;
-import com.backinfile.support.Time2;
+import com.backinfile.support.Time;
 import com.backinfile.support.Utils;
 import com.ea.async.Async;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,7 @@ public class ProxyTest {
 
         @Override
         public void startup() {
-            timerQueue.applyTimer(Time2.SEC, () -> {
+            timerQueue.applyTimer(Time.SEC, () -> {
                 TmpAsyncObj tmpAsyncObj = Proxy.getProxy(TmpAsyncObj.class);
                 tmpAsyncObj.testTask().whenComplete((v, ex) -> {
                     System.out.println("finish");
@@ -58,7 +58,7 @@ public class ProxyTest {
         node.addPort(new Port1(), Port.of(new TmpAsyncObj()));
         node.startUp();
         node.waitAllPortStartupFinish();
-        Utils.sleep(Time2.SEC * 2);
+        Utils.sleep(Time.SEC * 2);
         node.abort();
         node.join();
 

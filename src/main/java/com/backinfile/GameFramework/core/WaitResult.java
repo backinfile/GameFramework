@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.core;
 
-import com.backinfile.support.Time2;
+import com.backinfile.support.Time;
 import com.backinfile.support.func.Action1;
 
 import java.util.ArrayList;
@@ -21,6 +21,6 @@ public class WaitResult {
     }
 
     public boolean isExpire() {
-        return expireTime > 0 && expireTime < Time2.getCurMillis();
+        return expireTime > 0 && expireTime < Time.getCurMillis();
     }
 }
