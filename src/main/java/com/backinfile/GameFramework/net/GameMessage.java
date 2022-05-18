@@ -14,7 +14,7 @@ import com.backinfile.support.Utils;
  */
 public class GameMessage {
     private static final int CHECK_CODE = Utils.getHashCode("GameMessage");
-    private Object obj;
+    private final Object obj;
 
     private GameMessage(Object obj) {
         this.obj = obj;

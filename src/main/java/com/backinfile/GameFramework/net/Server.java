@@ -14,8 +14,14 @@ public class Server extends Thread {
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final int port;
     private static final AtomicLong idMax = new AtomicLong(1);
+    private final ServerHandler serverHandler;
 
     public Server(int port) {
+        this(null, port);
+    }
+
+    public Server(ServerHandler serverHandler, int port) {
+        this.serverHandler = serverHandler;
         this.port = port;
         idMax.getAndSet(1);
     }
@@ -42,7 +48,7 @@ public class Server extends Thread {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) {
                             ChannelPipeline pipeline = socketChannel.pipeline();
-                            pipeline.addLast(new Decoder(), new Encoder(), new ServerHandler());
+                            pipeline.addLast(new Decoder(), new Encoder(), serverHandler != null ? serverHandler : new ServerHandler());
                         }
                     });
 
@@ -63,17 +69,14 @@ public class Server extends Thread {
     }
 
 
-    private static class ServerHandler extends ChannelInboundHandlerAdapter {
-        private ChannelConnection connection;
+    public static class ServerHandler extends ChannelInboundHandlerAdapter {
+        protected ChannelConnection connection;
 
         @Override
         public void channelActive(ChannelHandlerContext ctx) {
             Channel channel = ctx.channel();
             connection = new ChannelConnection(idMax.getAndIncrement(), channel);
             LogCore.server.info("channelActive address:{} id:{}", channel.remoteAddress(), connection.getId());
-
-            // set connection to game
-            Gate.addConnection(connection);
         }
 
         @Override
@@ -85,8 +88,6 @@ public class Server extends Thread {
         public void channelInactive(ChannelHandlerContext ctx) {
             Channel channel = ctx.channel();
             LogCore.server.info("channelInactive address:{} id:{}", channel.remoteAddress(), connection.getId());
-
-            Gate.removeConnection(connection.getId());
         }
 
         @Override

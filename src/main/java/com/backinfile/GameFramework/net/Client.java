@@ -15,14 +15,16 @@ public class Client extends Thread {
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final String host;
     private final int port;
+    private final ClientHandler clientHandler;
 
-    public Client(String host, int port) {
+    public Client(ClientHandler clientHandler, String host, int port) {
+        this.clientHandler = clientHandler;
         this.host = host;
         this.port = port;
     }
 
     public Client(int port) {
-        this("127.0.0.1", port);
+        this(null, "127.0.0.1", port);
     }
 
     @Override
@@ -43,9 +45,9 @@ public class Client extends Thread {
                     .option(ChannelOption.SO_KEEPALIVE, true)
                     .option(ChannelOption.TCP_NODELAY, true).handler(new ChannelInitializer<SocketChannel>() {
                 @Override
-                protected void initChannel(SocketChannel socketChannel) throws Exception {
+                protected void initChannel(SocketChannel socketChannel) {
                     ChannelPipeline pipeline = socketChannel.pipeline();
-                    pipeline.addLast(new Decoder(), new Encoder(), new ClientHandler());
+                    pipeline.addLast(new Decoder(), new Encoder(), clientHandler != null ? clientHandler : new ClientHandler());
                 }
             });
 
@@ -65,30 +67,38 @@ public class Client extends Thread {
         countDownLatch.countDown();
     }
 
+    public ClientHandler getClientHandler() {
+        return new ClientHandler();
+    }
 
-    private class ClientHandler extends ChannelInboundHandlerAdapter {
+    public class ClientHandler extends ChannelInboundHandlerAdapter {
         private ChannelConnection connection = null;
 
 
         @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            connection = new ChannelConnection(0, ctx.channel());
-//            remoteNode.setConnection(connection); TODO
+        public void channelActive(ChannelHandlerContext ctx) {
+            Channel channel = ctx.channel();
+            connection = new ChannelConnection(0, channel);
+            LogCore.client.info("channelActive address:{} id:{}", channel.remoteAddress(), connection.getId());
         }
 
         @Override
-        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        public void channelInactive(ChannelHandlerContext ctx) {
+            Channel channel = ctx.channel();
+            LogCore.client.info("channelInactive address:{} id:{}", channel.remoteAddress(), connection.getId());
             stopClient();
         }
 
         @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        public void channelRead(ChannelHandlerContext ctx, Object msg) {
             connection.addInput((byte[]) msg);
         }
 
         @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-            LogCore.client.error("error in ClientHandler {} {}", cause.getClass().getSimpleName(), cause.getMessage());
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+            Channel channel = ctx.channel();
+            LogCore.client.error("exceptionCaught address:{} id:{} error:{} {}", channel.remoteAddress(),
+                    connection.getId(), cause.getClass().getName(), cause.getMessage());
         }
 
     }
