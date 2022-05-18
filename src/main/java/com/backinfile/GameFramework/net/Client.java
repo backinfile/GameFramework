@@ -67,10 +67,6 @@ public class Client extends Thread {
         countDownLatch.countDown();
     }
 
-    public ClientHandler getClientHandler() {
-        return new ClientHandler();
-    }
-
     public class ClientHandler extends ChannelInboundHandlerAdapter {
         private ChannelConnection connection = null;
 
