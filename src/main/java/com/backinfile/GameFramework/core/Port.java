@@ -74,6 +74,11 @@ public abstract class Port implements Delayed {
         // 心跳
         pulse();
         timerQueue.update();
+        if (startupOver) {
+            for (AsyncObject obj : asyncObjectMap.values()) {
+                obj.casePulse();
+            }
+        }
         // 执行post函数
         while (!postActionList.isEmpty()) {
             Action0 action = postActionList.poll();
@@ -142,6 +147,10 @@ public abstract class Port implements Delayed {
         if (node != null) {
             node.awake(this);
         }
+    }
+
+    public boolean isStartupOver() {
+        return startupOver;
     }
 
     /**
