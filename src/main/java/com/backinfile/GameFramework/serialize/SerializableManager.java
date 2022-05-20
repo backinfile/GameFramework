@@ -1,6 +1,7 @@
 package com.backinfile.GameFramework.serialize;
 
 import com.backinfile.GameFramework.LogCore;
+import com.backinfile.GameFramework.db.DBEntity;
 import com.backinfile.support.Utils;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -94,7 +95,11 @@ public class SerializableManager {
 
         // 自动挂载方式
         ClassPool pool = ClassPool.getDefault();
-        for (Class<?> clazz : reflections.getTypesAnnotatedWith(Serializable.class)) {
+        Set<Class<?>> autoClassSet = new HashSet<>();
+        autoClassSet.addAll(reflections.getTypesAnnotatedWith(Serializable.class));
+        autoClassSet.addAll(reflections.getTypesAnnotatedWith(DBEntity.class));
+
+        for (Class<?> clazz : autoClassSet) {
             try {
                 String typeName = clazz.getName();
                 String simpleName = clazz.getSimpleName();

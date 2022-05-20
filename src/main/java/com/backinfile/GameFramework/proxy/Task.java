@@ -1,6 +1,8 @@
 package com.backinfile.GameFramework.proxy;
 
+import com.backinfile.GameFramework.LogCore;
 import com.backinfile.support.SysException;
+import com.backinfile.support.Utils;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -8,15 +10,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class Task<T> extends CompletableFuture<T> {
-    private boolean succeed = false;
-
     public Task() {
 
     }
 
     @Override
     public T get() throws InterruptedException, ExecutionException {
-        if (!succeed) {
+        if (!isDone()) {
             throw new SysException("不允许同步调用");
         }
         return super.get();
@@ -24,7 +24,7 @@ public class Task<T> extends CompletableFuture<T> {
 
     @Override
     public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        if (!this.succeed) {
+        if (!this.isDone()) {
             throw new SysException("不允许同步调用");
         }
         return super.get(timeout, unit);
@@ -32,7 +32,7 @@ public class Task<T> extends CompletableFuture<T> {
 
     @Override
     public T getNow(T valueIfAbsent) {
-        if (!this.succeed) {
+        if (!this.isDone()) {
             throw new SysException("不允许同步调用");
         }
         return super.getNow(valueIfAbsent);
@@ -40,22 +40,21 @@ public class Task<T> extends CompletableFuture<T> {
 
     @Override
     public T join() {
-        if (!this.succeed) {
+        if (!this.isDone()) {
             throw new SysException("不允许同步调用");
         }
         return super.join();
     }
 
-    @Override
-    public boolean complete(T value) {
-        this.succeed = true;
-        return super.complete(value);
-    }
-
-    @Override
-    public boolean completeExceptionally(Throwable ex) {
-        this.succeed = true;
-        return super.completeExceptionally(ex);
+    public T join(long duration, String message) {
+        while (!isDone()) {
+            Utils.sleep(duration);
+            
+            if (!Utils.isNullOrEmpty(message)) {
+                LogCore.core.info(message);
+            }
+        }
+        return this.join();
     }
 
     public static <T> Task<T> of(Class<T> clazz) {

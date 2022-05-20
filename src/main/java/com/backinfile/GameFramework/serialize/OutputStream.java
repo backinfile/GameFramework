@@ -1,6 +1,7 @@
 package com.backinfile.GameFramework.serialize;
 
 import com.backinfile.GameFramework.LogCore;
+import com.backinfile.GameFramework.db.DBEntity;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 
@@ -150,7 +151,7 @@ public class OutputStream {
             for (Object ele : array) {
                 write(ele);
             }
-        } else if (obj.getClass().getAnnotation(Serializable.class) != null) {
+        } else if (obj.getClass().getAnnotation(Serializable.class) != null || obj.getClass().getAnnotation(DBEntity.class) != null) {
             packer.packInt(SerializeTag.AUTO_SERIALIZE);
             int id = SerializableManager.getCommonSerializeID(obj);
             packer.packInt(id);
