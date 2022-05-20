@@ -3,14 +3,18 @@ package com.backinfile.GameFramework.db;
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.support.Utils;
 import com.backinfile.support.func.Action2;
+import com.backinfile.support.func.Function0;
 import com.backinfile.support.func.Function1;
+import com.backinfile.support.func.Function2;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -18,13 +22,15 @@ import java.util.stream.Collectors;
 public class DBManager {
     public static final String DB_NAME = "world";
 
-    private final static Map<Class<?>, DBTable> tableMap = new HashMap<>();
+    final static Map<Class<?>, DBTable> tableMap = new HashMap<>();
+    final static Map<String, DBTable> tableNameMap = new HashMap<>();
 
-    private static class DBTable {
+    static class DBTable {
         public static DBTable EmptyInstance = new DBTable("");
         public String tableName;
         public DBField keyFiled;
         public List<DBField> fields = new ArrayList<>();
+        public Function0<Object> constructor;
 
         public DBTable(String tableName) {
             this.tableName = tableName;
@@ -40,7 +46,7 @@ public class DBManager {
         }
     }
 
-    private static class DBField {
+    static class DBField {
         public boolean index;
         public String name;
         public FieldType type;
@@ -48,19 +54,56 @@ public class DBManager {
         public Function1<Object, Object> getter;
     }
 
-    private enum FieldType {
-        Int(int.class, "INTEGER"),
-        Long(long.class, "BIGINT"),
-        Float(float.class, "FLOAT"),
-        Double(double.class, "DOUBLE"),
-        String(String.class, "TEXT"),
+    enum FieldType {
+        Int(int.class, "INTEGER", (rs, p) -> {
+            try {
+                return rs.getInt(p);
+            } catch (SQLException e) {
+                LogCore.db.error("error in get " + p, e);
+            }
+            return 0;
+        }),
+        Long(long.class, "BIGINT", (rs, p) -> {
+            try {
+                return rs.getLong(p);
+            } catch (SQLException e) {
+                LogCore.db.error("error in get " + p, e);
+            }
+            return 0L;
+        }),
+        Float(float.class, "FLOAT", (rs, p) -> {
+            try {
+                return rs.getLong(p);
+            } catch (SQLException e) {
+                LogCore.db.error("error in get " + p, e);
+            }
+            return 0L;
+        }),
+        Double(double.class, "DOUBLE", (rs, p) -> {
+            try {
+                return rs.getDouble(p);
+            } catch (SQLException e) {
+                LogCore.db.error("error in get " + p, e);
+            }
+            return 0d;
+        }),
+        String(String.class, "TEXT", (rs, p) -> {
+            try {
+                return rs.getString(p);
+            } catch (SQLException e) {
+                LogCore.db.error("error in get " + p, e);
+            }
+            return "";
+        }),
         ;
         public final Class<?> javaType;
         public final String sqlType;
+        public final Function2<Object, ResultSet, String> getResult;
 
-        FieldType(Class<?> javaType, java.lang.String sqlType) {
+        FieldType(Class<?> javaType, java.lang.String sqlType, Function2<Object, ResultSet, String> getResult) {
             this.javaType = javaType;
             this.sqlType = sqlType;
+            this.getResult = getResult;
         }
 
         public static FieldType getTypeBySqlType(String sqlType) {
@@ -87,8 +130,26 @@ public class DBManager {
                 LogCore.db.warn("entity class {} should end with \"DB\"", clazz.getName());
             }
 
-            int indexCount = 0;
+
+            Constructor<?> constructor = null;
+            try {
+                constructor = clazz.getConstructor();
+            } catch (NoSuchMethodException e) {
+                LogCore.db.warn("class {} has no default constructor", clazz.getName());
+                continue;
+            }
+
             DBTable table = new DBTable(annotation.table());
+            Constructor<?> finalConstructor = constructor;
+            table.constructor = () -> {
+                try {
+                    return (Object) finalConstructor.newInstance();
+                } catch (Exception e) {
+                    LogCore.db.error("create db entity error " + clazz.getSimpleName(), e);
+                }
+                return null;
+            };
+            int indexCount = 0;
             for (Field field : getFields(clazz)) {
                 for (FieldType fieldType : FieldType.values()) {
                     if (field.getType() == fieldType.javaType) {
@@ -124,6 +185,7 @@ public class DBManager {
                 continue;
             }
             tableMap.put(clazz, table);
+            tableNameMap.put(table.tableName, table);
         }
     }
 
@@ -140,7 +202,62 @@ public class DBManager {
                 }
             }
         }
+    }
 
+    public static Object query(Connection connection, String tableName, int id) {
+        DBTable table = tableNameMap.get(tableName);
+        if (table == null) {
+            LogCore.db.error("query unknown table {}", tableName);
+            return null;
+        }
+        String sql = Utils.format("select * from {} where `{}`= {};", table.tableName, table.keyFiled.name, id);
+
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(sql);
+            if (!resultSet.next()) {
+                return null;
+            }
+            Object result = table.constructor.invoke();
+            if (result == null) {
+                return null;
+            }
+            for (DBField field : table.fields) {
+                Object value = field.type.getResult.invoke(resultSet, field.name);
+                field.setter.invoke(result, value);
+            }
+            return result;
+        } catch (Exception e) {
+            LogCore.db.error("execute sql " + sql + " error", e);
+        }
+        return null;
+    }
+
+    public static List<Object> queryAll(Connection connection, String tableName) {
+        DBTable table = tableNameMap.get(tableName);
+        if (table == null) {
+            LogCore.db.error("query unknown table {}", tableName);
+            return null;
+        }
+        String sql = Utils.format("select * from {};", table.tableName);
+
+        List<Object> resultList = new ArrayList<>();
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(sql);
+            while (resultSet.next()) {
+                Object result = table.constructor.invoke();
+                if (result == null) {
+                    resultList.add(null);
+                }
+                for (DBField field : table.fields) {
+                    Object value = field.type.getResult.invoke(resultSet, field.name);
+                    field.setter.invoke(result, value);
+                }
+                resultList.add(result);
+            }
+        } catch (Exception e) {
+            LogCore.db.error("execute sql " + sql + " error", e);
+        }
+        return resultList;
     }
 
     private static DBTable queryOldTableStruct(Connection connection, String tableName) {
