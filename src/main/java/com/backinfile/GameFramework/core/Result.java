@@ -1,8 +1,8 @@
 package com.backinfile.GameFramework.core;
 
 import com.backinfile.GameFramework.LogCore;
-import com.backinfile.GameFramework.core.serialize.InputStream;
-import com.backinfile.GameFramework.core.serialize.OutputStream;
+import com.backinfile.GameFramework.serialize.InputStream;
+import com.backinfile.GameFramework.serialize.OutputStream;
 
 
 @SuppressWarnings("unchecked")

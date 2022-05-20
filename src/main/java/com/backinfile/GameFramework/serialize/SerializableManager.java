@@ -1,4 +1,4 @@
-package com.backinfile.GameFramework.core.serialize;
+package com.backinfile.GameFramework.serialize;
 
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.support.Utils;

@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.core;
 
-import com.backinfile.GameFramework.core.serialize.Serializable;
+import com.backinfile.GameFramework.serialize.Serializable;
 
 @Serializable
 public class CallPoint {

@@ -1,10 +1,10 @@
 import com.backinfile.GameFramework.core.Node;
 import com.backinfile.GameFramework.core.Port;
-import com.backinfile.GameFramework.core.serialize.SerializableManager;
 import com.backinfile.GameFramework.proxy.AsyncObject;
 import com.backinfile.GameFramework.proxy.Proxy;
 import com.backinfile.GameFramework.proxy.ProxyManager;
 import com.backinfile.GameFramework.proxy.Task;
+import com.backinfile.GameFramework.serialize.SerializableManager;
 import com.backinfile.support.Time;
 import com.backinfile.support.Utils;
 import com.ea.async.Async;

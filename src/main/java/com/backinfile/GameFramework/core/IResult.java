@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.core;
 
-import com.backinfile.GameFramework.core.serialize.ISerializable;
+import com.backinfile.GameFramework.serialize.ISerializable;
 import com.backinfile.support.Utils;
 
 public interface IResult extends ISerializable {

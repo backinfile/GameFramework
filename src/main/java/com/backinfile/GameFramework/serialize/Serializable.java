@@ -1,4 +1,4 @@
-package com.backinfile.GameFramework.core.serialize;
+package com.backinfile.GameFramework.serialize;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

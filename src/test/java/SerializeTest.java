@@ -1,4 +1,4 @@
-import com.backinfile.GameFramework.core.serialize.*;
+import com.backinfile.GameFramework.serialize.*;
 
 import java.util.Arrays;
 import java.util.HashMap;

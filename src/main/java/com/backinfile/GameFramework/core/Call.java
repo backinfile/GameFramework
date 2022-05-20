@@ -1,6 +1,6 @@
 package com.backinfile.GameFramework.core;
 
-import com.backinfile.GameFramework.core.serialize.Serializable;
+import com.backinfile.GameFramework.serialize.Serializable;
 
 import java.util.Arrays;
 
@@ -8,7 +8,7 @@ import java.util.Arrays;
 public class Call {
     public static final int RPC_TYPE_CALL = 0;
     public static final int RPC_TYPE_CALL_RETURN = 1; // 与回复的call同id
-    
+
     public long id;
     public CallPoint to;
     public CallPoint from;

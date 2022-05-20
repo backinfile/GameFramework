@@ -1,7 +1,7 @@
 package com.backinfile.GameFramework.core;
 
 import com.backinfile.GameFramework.LogCore;
-import com.backinfile.GameFramework.core.serialize.SerializableManager;
+import com.backinfile.GameFramework.serialize.SerializableManager;
 import com.backinfile.support.SysException;
 import com.backinfile.support.Utils;
 import com.backinfile.support.func.Action0;
@@ -128,7 +128,7 @@ public class Node {
             portsWaitForRun.add(port);
         }
     }
-   
+
     // 将已经被执行过的port重新放入执行队列
     private void reSchedule(int num) {
         for (int i = 0; i < num; i++) {

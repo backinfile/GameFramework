@@ -2,10 +2,10 @@ package com.backinfile.GameFramework.net;
 
 
 import com.backinfile.GameFramework.LogCore;
-import com.backinfile.GameFramework.core.serialize.ISerializable;
-import com.backinfile.GameFramework.core.serialize.InputStream;
-import com.backinfile.GameFramework.core.serialize.OutputStream;
-import com.backinfile.GameFramework.core.serialize.Serializable;
+import com.backinfile.GameFramework.serialize.ISerializable;
+import com.backinfile.GameFramework.serialize.InputStream;
+import com.backinfile.GameFramework.serialize.OutputStream;
+import com.backinfile.GameFramework.serialize.Serializable;
 import com.backinfile.support.SysException;
 import com.backinfile.support.Utils;
 

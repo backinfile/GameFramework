@@ -1,4 +1,4 @@
-package com.backinfile.GameFramework.core.serialize;
+package com.backinfile.GameFramework.serialize;
 
 /**
  * 序列化接口, 要求有无参初始化函数
