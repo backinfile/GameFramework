@@ -52,6 +52,13 @@ public class DBManager {
         public FieldType type;
         public Action2<Object, Object> setter;
         public Function1<Object, Object> getter;
+
+        public String getStringFieldValue(Object obj) {
+            if (type == FieldType.String) {
+                return "'" + getter.invoke(obj) + "'";
+            }
+            return getter.invoke(obj).toString();
+        }
     }
 
     enum FieldType {
@@ -194,7 +201,7 @@ public class DBManager {
         for (DBTable table : tableMap.values()) {
             DBTable oldTable = queryOldTableStruct(connection, table.tableName);
             if (oldTable == null) { // 不存在 直接新建
-                String sql = getInsertTableSql(table);
+                String sql = getCreateTableSql(table);
                 executeSql(connection, sql);
             } else { // 已存在 检查修改
                 for (String sql : getModifySqlString(oldTable, table)) {
@@ -260,6 +267,66 @@ public class DBManager {
         return resultList;
     }
 
+    public static int insert(Connection connection, Object obj) {
+        DBTable table = tableMap.get(obj.getClass());
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("insert into ");
+        sqlBuilder.append(table.tableName);
+        sqlBuilder.append(" ");
+
+        {
+            StringJoiner keyString = new StringJoiner(",", "(", ")");
+            for (DBField field : table.fields) {
+                keyString.add(field.name);
+            }
+            sqlBuilder.append(keyString);
+        }
+        sqlBuilder.append(" values ");
+
+        {
+            StringJoiner valueString = new StringJoiner(",", "(", ")");
+            for (DBField field : table.fields) {
+                valueString.add(field.getStringFieldValue(obj));
+            }
+            sqlBuilder.append(valueString);
+        }
+        sqlBuilder.append(";");
+        String sql = sqlBuilder.toString();
+
+        return executeUpdateSql(connection, sql);
+    }
+
+    public static int update(Connection connection, Object obj) {
+        DBTable table = tableMap.get(obj.getClass());
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("UPDATE ");
+        sqlBuilder.append(table.tableName);
+        sqlBuilder.append(" SET ");
+
+        {
+            StringJoiner setString = new StringJoiner(",");
+            for (DBField field : table.fields) {
+                setString.add(Utils.format("`{}` = {}", field.name, field.getStringFieldValue(obj)));
+            }
+            sqlBuilder.append(setString);
+        }
+
+        sqlBuilder.append(Utils.format(" WHERE `{}` = {};", table.keyFiled.name, table.keyFiled.getStringFieldValue(obj)));
+        String sql = sqlBuilder.toString();
+
+        return executeUpdateSql(connection, sql);
+    }
+
+//    DELETE FROM Customers
+//    WHERE CustomerName='Alfreds Futterkiste';
+
+    public static int delete(Connection connection, String tableName, int id) {
+        DBTable table = tableNameMap.get(tableName);
+        String sql = Utils.format("DELETE FROM {} WHERE `{}`={}", table.tableName, table.keyFiled.name, id);
+        return executeUpdateSql(connection, sql);
+    }
+
+
     private static DBTable queryOldTableStruct(Connection connection, String tableName) {
         DBTable table = new DBTable(tableName);
         String sql = "PRAGMA table_info(\"" + tableName + "\")";
@@ -288,7 +355,7 @@ public class DBManager {
         return table;
     }
 
-    private static String getInsertTableSql(DBTable table) {
+    private static String getCreateTableSql(DBTable table) {
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("Create table ");
         sqlBuilder.append(table.tableName);
@@ -344,6 +411,16 @@ public class DBManager {
         }
     }
 
+    private static int executeUpdateSql(Connection connection, String sql) {
+        int result = 0;
+        try (Statement statement = connection.createStatement()) {
+            result = statement.executeUpdate(sql);
+            LogCore.db.info("execute sql " + sql + " result=" + result);
+        } catch (Exception e) {
+            LogCore.db.error("execute sql " + sql + " error", e);
+        }
+        return result;
+    }
 
     private static List<Field> getFields(Class<?> clazz) {
         List<Field> result = new ArrayList<>();

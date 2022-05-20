@@ -68,6 +68,16 @@ class DBAsyncObject extends AsyncObject {
         DBManager.registerAll(DBAsyncObject.class.getClassLoader());
         Connection connection = DriverManager.getConnection("jdbc:sqlite:game.db");
         DBManager.updateTableStruct(connection);
+
+        TestDB testDB = new TestDB();
+        testDB.id = 1;
+        testDB.name = "2q32";
+        testDB.value = 123;
+        testDB.value2 = 2453;
+
+        DBManager.update(connection, testDB);
+        DBManager.delete(connection, "test", 1);
+
         connection.close();
     }
 }
