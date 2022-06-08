@@ -55,11 +55,35 @@ class DBAsyncObject extends AsyncObject {
         return Task.completedTask(resultObjects.stream().map(t -> (T) t).filter(Objects::nonNull).collect(Collectors.toList()));
     }
 
+    @SuppressWarnings("unchecked")
+    public <T> Task<List<T>> queryAll(String tableName, int playerId) {
+        List<Object> resultObjects = DBManager.queryAll(connection, tableName, playerId);
+        if (resultObjects == null || resultObjects.isEmpty()) {
+            return Task.completedTask(Collections.emptyList());
+        }
+        return Task.completedTask(resultObjects.stream().map(t -> (T) t).filter(Objects::nonNull).collect(Collectors.toList()));
+    }
 
-    @DBEntity(table = "test", key = "id")
+    public Task<Boolean> insert(Object obj) {
+        int result = DBManager.insert(connection, obj);
+        return Task.completedTask(result > 0);
+    }
+
+    public Task<Boolean> update(Object obj) {
+        int result = DBManager.update(connection, obj);
+        return Task.completedTask(result > 0);
+    }
+
+    public Task<Boolean> delete(String tableName, int id) {
+        int result = DBManager.delete(connection, tableName, id);
+        return Task.completedTask(result > 0);
+    }
+
+
+    @DBEntity(table = "test")
     public static class TestDB extends EntityBase {
-        public int id;
         public String name;
+        public int playerId;
         public int value;
         public int value2;
     }
@@ -70,13 +94,16 @@ class DBAsyncObject extends AsyncObject {
         DBManager.updateTableStruct(connection);
 
         TestDB testDB = new TestDB();
-        testDB.id = 1;
+        testDB.id = 4;
         testDB.name = "2q32";
         testDB.value = 123;
         testDB.value2 = 2453;
+        testDB.playerId = 1243;
 
-        DBManager.update(connection, testDB);
-        DBManager.delete(connection, "test", 1);
+//        DBManager.insert(connection, testDB);
+//        DBManager.delete(connection, "test", 1);
+
+        List<Object> test = DBManager.queryAll(connection, "test", 1243);
 
         connection.close();
     }

@@ -24,11 +24,13 @@ public class DBManager {
 
     final static Map<Class<?>, DBTable> tableMap = new HashMap<>();
     final static Map<String, DBTable> tableNameMap = new HashMap<>();
+    private static boolean SQL_LOG = true;
 
     static class DBTable {
         public static DBTable EmptyInstance = new DBTable("");
         public String tableName;
         public DBField keyFiled;
+        public DBField playerKeyFiled;
         public List<DBField> fields = new ArrayList<>();
         public Function0<Object> constructor;
 
@@ -123,6 +125,10 @@ public class DBManager {
         }
     }
 
+    public static void enableSqlLog(boolean log) {
+        SQL_LOG = log;
+    }
+
     public static void registerAll(ClassLoader... classLoaders) {
         Reflections reflections = new Reflections(
                 new SubTypesScanner(false),
@@ -161,7 +167,7 @@ public class DBManager {
                 for (FieldType fieldType : FieldType.values()) {
                     if (field.getType() == fieldType.javaType) {
                         DBField dbField = new DBField();
-                        dbField.index = field.getName().equals(annotation.key());
+                        dbField.index = field.getName().equals("id") || field.getName().equals(annotation.playerKey());
                         dbField.name = field.getName();
                         dbField.type = fieldType;
                         dbField.getter = obj -> {
@@ -181,8 +187,12 @@ public class DBManager {
                         };
                         table.fields.add(dbField);
                         if (dbField.index) {
-                            indexCount++;
-                            table.keyFiled = dbField;
+                            if (dbField.name.equals("id")) {
+                                indexCount++;
+                                table.keyFiled = dbField;
+                            } else {
+                                table.playerKeyFiled = dbField;
+                            }
                         }
                     }
                 }
@@ -246,6 +256,34 @@ public class DBManager {
             return null;
         }
         String sql = Utils.format("select * from {};", table.tableName);
+
+        List<Object> resultList = new ArrayList<>();
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(sql);
+            while (resultSet.next()) {
+                Object result = table.constructor.invoke();
+                if (result == null) {
+                    resultList.add(null);
+                }
+                for (DBField field : table.fields) {
+                    Object value = field.type.getResult.invoke(resultSet, field.name);
+                    field.setter.invoke(result, value);
+                }
+                resultList.add(result);
+            }
+        } catch (Exception e) {
+            LogCore.db.error("execute sql " + sql + " error", e);
+        }
+        return resultList;
+    }
+
+    public static List<Object> queryAll(Connection connection, String tableName, int playerId) {
+        DBTable table = tableNameMap.get(tableName);
+        if (table == null || table.playerKeyFiled == null) {
+            LogCore.db.error("query unknown table {}", tableName);
+            return null;
+        }
+        String sql = Utils.format("select * from {} where `{}` = {};", table.tableName, table.playerKeyFiled.name, playerId);
 
         List<Object> resultList = new ArrayList<>();
         try (Statement statement = connection.createStatement()) {
@@ -405,7 +443,9 @@ public class DBManager {
     private static void executeSql(Connection connection, String sql) {
         try (Statement statement = connection.createStatement()) {
             statement.execute(sql);
-            LogCore.db.info("execute sql " + sql);
+            if (SQL_LOG) {
+                LogCore.db.info("execute sql " + sql);
+            }
         } catch (Exception e) {
             LogCore.db.error("execute sql " + sql + " error", e);
         }
@@ -415,7 +455,9 @@ public class DBManager {
         int result = 0;
         try (Statement statement = connection.createStatement()) {
             result = statement.executeUpdate(sql);
-            LogCore.db.info("execute sql " + sql + " result=" + result);
+            if (SQL_LOG) {
+                LogCore.db.info("execute sql " + sql + " result=" + result);
+            }
         } catch (Exception e) {
             LogCore.db.error("execute sql " + sql + " error", e);
         }

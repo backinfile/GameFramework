@@ -12,10 +12,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface DBEntity {
-    /**
-     * 主键 需求int类型
-     */
-    String key() default "id";
+    String playerKey() default "playerId";
 
     /**
      * 表名
