@@ -7,6 +7,7 @@ import java.lang.annotation.Target;
 
 /**
  * 此类的public字段可以自动序列化
+ * 需要有空构造函数
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
