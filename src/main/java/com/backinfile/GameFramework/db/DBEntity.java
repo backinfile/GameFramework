@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface DBEntity {
-    String playerKey() default "playerId";
+    String extraIndex() default "playerId";
 
     /**
      * 表名

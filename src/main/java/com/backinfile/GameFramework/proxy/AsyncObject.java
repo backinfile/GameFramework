@@ -7,6 +7,8 @@ import com.backinfile.support.func.Action0;
 
 /**
  * 此类中所有public的返回Task的函数会自动注册为代理函数
+ * 不适用函数重载
+ * 需要有空构造函数或一个id参数的构造函数
  */
 public abstract class AsyncObject {
     private final long objId;

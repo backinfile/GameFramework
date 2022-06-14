@@ -5,7 +5,6 @@ import com.backinfile.support.Utils;
 import com.backinfile.support.func.Action2;
 import com.backinfile.support.func.Function0;
 import com.backinfile.support.func.Function1;
-import com.backinfile.support.func.Function2;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -20,17 +19,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class DBManager {
-    public static final String DB_NAME = "world";
-
     final static Map<Class<?>, DBTable> tableMap = new HashMap<>();
     final static Map<String, DBTable> tableNameMap = new HashMap<>();
     private static boolean SQL_LOG = true;
 
     static class DBTable {
-        public static DBTable EmptyInstance = new DBTable("");
         public String tableName;
         public DBField keyFiled;
-        public DBField playerKeyFiled;
+        public DBField extraIndexFiled;
         public List<DBField> fields = new ArrayList<>();
         public Function0<Object> constructor;
 
@@ -38,7 +34,7 @@ public class DBManager {
             this.tableName = tableName;
         }
 
-        public DBField getFiledByName(String filedName) {
+        public DBField getFieldByName(String filedName) {
             for (DBField field : fields) {
                 if (field.name.equals(filedName)) {
                     return field;
@@ -46,10 +42,22 @@ public class DBManager {
             }
             return null;
         }
+
+        public Object parseResult(ResultSet resultSet) {
+            Object result = constructor.invoke();
+            if (result != null) {
+                for (DBField field : fields) {
+                    Object value = field.type.parseResult(resultSet, field.name);
+                    field.setter.invoke(result, value);
+                }
+            }
+            return result;
+        }
     }
 
     static class DBField {
-        public boolean index;
+        public boolean key;
+        public boolean extraIndex;
         public String name;
         public FieldType type;
         public Action2<Object, Object> setter;
@@ -64,55 +72,43 @@ public class DBManager {
     }
 
     enum FieldType {
-        Int(int.class, "INTEGER", (rs, p) -> {
-            try {
+        Int(int.class, "INTEGER") {
+            @Override
+            public Object getResult(ResultSet rs, java.lang.String p) throws SQLException {
                 return rs.getInt(p);
-            } catch (SQLException e) {
-                LogCore.db.error("error in get " + p, e);
             }
-            return 0;
-        }),
-        Long(long.class, "BIGINT", (rs, p) -> {
-            try {
+        },
+        Long(long.class, "BIGINT") {
+            @Override
+            public Object getResult(ResultSet rs, java.lang.String p) throws SQLException {
                 return rs.getLong(p);
-            } catch (SQLException e) {
-                LogCore.db.error("error in get " + p, e);
             }
-            return 0L;
-        }),
-        Float(float.class, "FLOAT", (rs, p) -> {
-            try {
-                return rs.getLong(p);
-            } catch (SQLException e) {
-                LogCore.db.error("error in get " + p, e);
+        },
+        Float(float.class, "FLOAT") {
+            @Override
+            public Object getResult(ResultSet rs, java.lang.String p) throws SQLException {
+                return rs.getFloat(p);
             }
-            return 0L;
-        }),
-        Double(double.class, "DOUBLE", (rs, p) -> {
-            try {
+        },
+        Double(double.class, "DOUBLE") {
+            @Override
+            public Object getResult(ResultSet rs, java.lang.String p) throws SQLException {
                 return rs.getDouble(p);
-            } catch (SQLException e) {
-                LogCore.db.error("error in get " + p, e);
             }
-            return 0d;
-        }),
-        String(String.class, "TEXT", (rs, p) -> {
-            try {
+        },
+        String(String.class, "TEXT") {
+            @Override
+            public Object getResult(ResultSet rs, java.lang.String p) throws SQLException {
                 return rs.getString(p);
-            } catch (SQLException e) {
-                LogCore.db.error("error in get " + p, e);
             }
-            return "";
-        }),
+        },
         ;
         public final Class<?> javaType;
         public final String sqlType;
-        public final Function2<Object, ResultSet, String> getResult;
 
-        FieldType(Class<?> javaType, java.lang.String sqlType, Function2<Object, ResultSet, String> getResult) {
+        FieldType(Class<?> javaType, java.lang.String sqlType) {
             this.javaType = javaType;
             this.sqlType = sqlType;
-            this.getResult = getResult;
         }
 
         public static FieldType getTypeBySqlType(String sqlType) {
@@ -122,6 +118,17 @@ public class DBManager {
                 }
             }
             return null;
+        }
+
+        protected abstract Object getResult(ResultSet rs, String p) throws SQLException;
+
+        public Object parseResult(ResultSet rs, String p) {
+            try {
+                return getResult(rs, p);
+            } catch (SQLException e) {
+                LogCore.db.error("error in get " + p, e);
+            }
+            return "";
         }
     }
 
@@ -167,7 +174,8 @@ public class DBManager {
                 for (FieldType fieldType : FieldType.values()) {
                     if (field.getType() == fieldType.javaType) {
                         DBField dbField = new DBField();
-                        dbField.index = field.getName().equals("id") || field.getName().equals(annotation.playerKey());
+                        dbField.key = field.getName().equals("id");
+                        dbField.extraIndex = field.getName().equals(annotation.extraIndex());
                         dbField.name = field.getName();
                         dbField.type = fieldType;
                         dbField.getter = obj -> {
@@ -186,13 +194,12 @@ public class DBManager {
                             }
                         };
                         table.fields.add(dbField);
-                        if (dbField.index) {
-                            if (dbField.name.equals("id")) {
-                                indexCount++;
-                                table.keyFiled = dbField;
-                            } else {
-                                table.playerKeyFiled = dbField;
-                            }
+                        if (dbField.key) {
+                            indexCount++;
+                            table.keyFiled = dbField;
+                        }
+                        if (dbField.extraIndex) {
+                            table.extraIndexFiled = dbField;
                         }
                     }
                 }
@@ -213,6 +220,11 @@ public class DBManager {
             if (oldTable == null) { // 不存在 直接新建
                 String sql = getCreateTableSql(table);
                 executeSql(connection, sql);
+                // 创建索引
+                String createIndexSql = getCreateIndexSql(table);
+                if (!Utils.isNullOrEmpty(createIndexSql)) {
+                    executeSql(connection, createIndexSql);
+                }
             } else { // 已存在 检查修改
                 for (String sql : getModifySqlString(oldTable, table)) {
                     executeSql(connection, sql);
@@ -234,15 +246,7 @@ public class DBManager {
             if (!resultSet.next()) {
                 return null;
             }
-            Object result = table.constructor.invoke();
-            if (result == null) {
-                return null;
-            }
-            for (DBField field : table.fields) {
-                Object value = field.type.getResult.invoke(resultSet, field.name);
-                field.setter.invoke(result, value);
-            }
-            return result;
+            return table.parseResult(resultSet);
         } catch (Exception e) {
             LogCore.db.error("execute sql " + sql + " error", e);
         }
@@ -261,15 +265,7 @@ public class DBManager {
         try (Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(sql);
             while (resultSet.next()) {
-                Object result = table.constructor.invoke();
-                if (result == null) {
-                    resultList.add(null);
-                }
-                for (DBField field : table.fields) {
-                    Object value = field.type.getResult.invoke(resultSet, field.name);
-                    field.setter.invoke(result, value);
-                }
-                resultList.add(result);
+                resultList.add(table.parseResult(resultSet));
             }
         } catch (Exception e) {
             LogCore.db.error("execute sql " + sql + " error", e);
@@ -279,25 +275,17 @@ public class DBManager {
 
     public static List<Object> queryAll(Connection connection, String tableName, int playerId) {
         DBTable table = tableNameMap.get(tableName);
-        if (table == null || table.playerKeyFiled == null) {
+        if (table == null || table.extraIndexFiled == null) {
             LogCore.db.error("query unknown table {}", tableName);
             return null;
         }
-        String sql = Utils.format("select * from {} where `{}` = {};", table.tableName, table.playerKeyFiled.name, playerId);
+        String sql = Utils.format("select * from {} where `{}` = {};", table.tableName, table.extraIndexFiled.name, playerId);
 
         List<Object> resultList = new ArrayList<>();
         try (Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(sql);
             while (resultSet.next()) {
-                Object result = table.constructor.invoke();
-                if (result == null) {
-                    resultList.add(null);
-                }
-                for (DBField field : table.fields) {
-                    Object value = field.type.getResult.invoke(resultSet, field.name);
-                    field.setter.invoke(result, value);
-                }
-                resultList.add(result);
+                resultList.add(table.parseResult(resultSet));
             }
         } catch (Exception e) {
             LogCore.db.error("execute sql " + sql + " error", e);
@@ -377,11 +365,14 @@ public class DBManager {
                 DBField field = new DBField();
                 field.name = filedName;
                 field.type = FieldType.getTypeBySqlType(filedType);
-                field.index = key == 1;
+                field.key = key == 1;
 
                 table.fields.add(field);
-                if (field.index) {
+                if (field.key) {
                     table.keyFiled = field;
+                }
+                if (field.extraIndex) {
+                    table.extraIndexFiled = field;
                 }
             }
         } catch (Exception e) {
@@ -390,7 +381,28 @@ public class DBManager {
         if (table.fields.isEmpty()) {
             return null;
         }
+        queryTableIndex(connection, tableName, table);
         return table;
+    }
+
+    private static void queryTableIndex(Connection connection, String tableName, DBTable table) {
+        String sql = "SELECT name FROM sqlite_master WHERE type = 'index' and tbl_name = '" + tableName + "';";
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(sql);
+            while (resultSet.next()) {
+                String indexName = resultSet.getString(1);
+                String[] split = indexName.split("_");
+                if (split.length == 2 && tableName.equals(split[0])) {
+                    String fieldName = split[1];
+                    DBField field = table.getFieldByName(fieldName);
+                    if (field != null) {
+                        field.extraIndex = true;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LogCore.db.error("execute sql " + sql + " error", e);
+        }
     }
 
     private static String getCreateTableSql(DBTable table) {
@@ -404,7 +416,7 @@ public class DBManager {
             sqlBuilder.append("` ");
             sqlBuilder.append(field.type.sqlType);
             sqlBuilder.append(" ");
-            if (field.index) {
+            if (field.key) {
                 sqlBuilder.append("PRIMARY KEY");
             }
             sqlBuilder.append(", ");
@@ -417,6 +429,14 @@ public class DBManager {
         return sqlBuilder.toString();
     }
 
+    private static String getCreateIndexSql(DBTable table) {
+        if (table.extraIndexFiled == null) {
+            return "";
+        }
+        String indexName = table.tableName + "_" + table.extraIndexFiled.name;
+        return "CREATE INDEX " + indexName + " on " + table.tableName + "(" + table.extraIndexFiled.name + ");";
+    }
+
     private static List<String> getModifySqlString(DBTable oldTable, DBTable table) {
         List<String> result = new ArrayList<>();
         Set<String> updateFieldNameSet = new HashSet<>();
@@ -424,8 +444,8 @@ public class DBManager {
         updateFieldNameSet.addAll(table.fields.stream().map(f -> f.name).collect(Collectors.toSet()));
 
         for (String filedName : updateFieldNameSet) {
-            DBField oldField = oldTable.getFiledByName(filedName);
-            DBField newField = table.getFiledByName(filedName);
+            DBField oldField = oldTable.getFieldByName(filedName);
+            DBField newField = table.getFieldByName(filedName);
             if (newField != null && oldField == null) {
                 result.add(Utils.format("alter table {} add `{}` {};", table.tableName, filedName, newField.type.sqlType));
             } else if (newField == null && oldField != null) {
@@ -437,6 +457,23 @@ public class DBManager {
                 }
             }
         }
+
+        // 检查索引修改
+        for (String filedName : updateFieldNameSet) {
+            DBField oldField = oldTable.getFieldByName(filedName);
+            DBField newField = table.getFieldByName(filedName);
+            boolean oldIndex = oldField != null && oldField.extraIndex;
+            boolean newIndex = newField != null && newField.extraIndex;
+            if (newIndex != oldIndex) {
+                if (newIndex) {
+                    result.add(getCreateIndexSql(table));
+                } else {
+                    String sql = "DROP INDEX " + table.tableName + "_" + oldField.name + ";";
+                    result.add(sql);
+                }
+            }
+        }
+
         return result;
     }
 
@@ -444,10 +481,10 @@ public class DBManager {
         try (Statement statement = connection.createStatement()) {
             statement.execute(sql);
             if (SQL_LOG) {
-                LogCore.db.info("execute sql " + sql);
+                LogCore.db.info("execute sql success: " + sql);
             }
         } catch (Exception e) {
-            LogCore.db.error("execute sql " + sql + " error", e);
+            LogCore.db.error("execute sql error: " + sql, e);
         }
     }
 
@@ -456,10 +493,10 @@ public class DBManager {
         try (Statement statement = connection.createStatement()) {
             result = statement.executeUpdate(sql);
             if (SQL_LOG) {
-                LogCore.db.info("execute sql " + sql + " result=" + result);
+                LogCore.db.info("execute sql result:" + result + " sql:" + sql);
             }
         } catch (Exception e) {
-            LogCore.db.error("execute sql " + sql + " error", e);
+            LogCore.db.error("execute sql error: " + sql, e);
         }
         return result;
     }
@@ -482,13 +519,5 @@ public class DBManager {
             result.add(field);
         }
         return result;
-    }
-
-    public static String getTableName(Class<? extends EntityBase> clazz) {
-        return tableMap.getOrDefault(clazz, DBTable.EmptyInstance).tableName;
-    }
-
-    public static String getKeyName(Class<? extends EntityBase> clazz) {
-        return tableMap.getOrDefault(clazz, DBTable.EmptyInstance).keyFiled.name;
     }
 }

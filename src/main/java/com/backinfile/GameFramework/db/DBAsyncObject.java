@@ -5,6 +5,8 @@ import com.backinfile.GameFramework.core.Port;
 import com.backinfile.GameFramework.proxy.AsyncObject;
 import com.backinfile.GameFramework.proxy.Task;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -13,16 +15,24 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-class DBAsyncObject extends AsyncObject {
-    public static final String DB_PATH = "jdbc:sqlite:game.db";
+public class DBAsyncObject extends AsyncObject {
+    private static final String DB_PATH_PREFIX = "jdbc:sqlite:";
+    private String dbPath = "game.db";
     private Connection connection = null;
+
+    public DBAsyncObject() {
+    }
+
+    public DBAsyncObject(String dbPath) {
+        this.dbPath = dbPath;
+    }
 
     @Override
     public void onAttach(Port port) {
         super.onAttach(port);
         try {
-            connection = DriverManager.getConnection(DB_PATH);
-        } catch (SQLException e) {
+            connection = DriverManager.getConnection(DB_PATH_PREFIX + dbPath);
+        } catch (Exception e) {
             LogCore.db.error("error in open connection", e);
         }
     }
@@ -56,7 +66,7 @@ class DBAsyncObject extends AsyncObject {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> Task<List<T>> queryAll(String tableName, int playerId) {
+    public <T> Task<List<T>> queryAllByIndex(String tableName, int playerId) {
         List<Object> resultObjects = DBManager.queryAll(connection, tableName, playerId);
         if (resultObjects == null || resultObjects.isEmpty()) {
             return Task.completedTask(Collections.emptyList());
@@ -79,32 +89,15 @@ class DBAsyncObject extends AsyncObject {
         return Task.completedTask(result > 0);
     }
 
-
-    @DBEntity(table = "test")
-    public static class TestDB extends EntityBase {
-        public String name;
-        public int playerId;
-        public int value;
-        public int value2;
-    }
-
-    public static void main(String[] args) throws Exception {
-        DBManager.registerAll(DBAsyncObject.class.getClassLoader());
-        Connection connection = DriverManager.getConnection("jdbc:sqlite:game.db");
-        DBManager.updateTableStruct(connection);
-
-        TestDB testDB = new TestDB();
-        testDB.id = 4;
-        testDB.name = "2q32";
-        testDB.value = 123;
-        testDB.value2 = 2453;
-        testDB.playerId = 1243;
-
-//        DBManager.insert(connection, testDB);
-//        DBManager.delete(connection, "test", 1);
-
-        List<Object> test = DBManager.queryAll(connection, "test", 1243);
-
-        connection.close();
+    public Task<Boolean> backupDatabase() {
+        try {
+            int index = dbPath.lastIndexOf('.');
+            String backupPath = dbPath.substring(0, index) + ".bak" + dbPath.substring(index);
+            Files.copy(Paths.get(dbPath), Paths.get(backupPath));
+            LogCore.db.info("backupDatabase success path:{}", backupPath);
+        } catch (Exception e) {
+            LogCore.db.error("backupDatabase error", e);
+        }
+        return Task.completedTask(false);
     }
 }

@@ -188,14 +188,22 @@ public abstract class Port implements Delayed {
         ProxyManager.registerPortId(obj.getClass(), getPortId());
 
         asyncObjectMap.put(obj.getObjId(), obj);
-        obj.onAttach(this);
+        try {
+            obj.onAttach(this);
+        } catch (Throwable e) {
+            LogCore.core.error("error on onAttach", e);
+        }
     }
 
     // 非线程安全
     protected AsyncObject removeAsyncObj(long id) {
         AsyncObject asyncObject = asyncObjectMap.get(id);
         if (asyncObject != null) {
-            asyncObject.onDetach(this);
+            try {
+                asyncObject.onDetach(this);
+            } catch (Throwable e) {
+                LogCore.core.error("error on onDetach", e);
+            }
         }
         return asyncObjectMap.remove(id);
     }

@@ -17,7 +17,7 @@ public class DB {
     }
 
     public static <T extends EntityBase> Task<List<T>> queryAll(Class<T> clazz, int playerId) {
-        return Proxy.getProxy(DBAsyncObject.class).queryAll(DBManager.tableMap.get(clazz).tableName, playerId);
+        return Proxy.getProxy(DBAsyncObject.class).queryAllByIndex(DBManager.tableMap.get(clazz).tableName, playerId);
     }
 
     public static void insert(EntityBase entityBase) {
