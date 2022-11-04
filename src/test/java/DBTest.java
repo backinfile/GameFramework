@@ -5,7 +5,6 @@ import com.backinfile.GameFramework.db.DBEntity;
 import com.backinfile.GameFramework.db.DBManager;
 import com.backinfile.GameFramework.db.EntityBase;
 import com.backinfile.GameFramework.proxy.Proxy;
-import com.backinfile.GameFramework.proxy.ProxyManager;
 import com.backinfile.GameFramework.serialize.SerializableManager;
 import com.backinfile.support.Time;
 import com.backinfile.support.Utils;
@@ -37,7 +36,6 @@ public class DBTest {
     @Test
     public void testDB() {
         Async.init();
-        ProxyManager.registerAll(DBTest.class.getClassLoader());
         DBManager.registerAll(DBTest.class.getClassLoader());
         SerializableManager.registerAll(DBTest.class.getClassLoader());
 

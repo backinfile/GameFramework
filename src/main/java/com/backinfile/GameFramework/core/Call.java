@@ -2,8 +2,6 @@ package com.backinfile.GameFramework.core;
 
 import com.backinfile.GameFramework.serialize.Serializable;
 
-import java.util.Arrays;
-
 @Serializable
 public class Call {
     public static final int RPC_TYPE_CALL = 0;
@@ -33,7 +31,7 @@ public class Call {
         return call;
     }
 
-    public Call newCallReturn(Object[] args) {
+    public Call newCallReturn(Object... args) {
         Call callReturn = new Call();
         callReturn.id = id;
         callReturn.from = to.copy();
@@ -61,8 +59,8 @@ public class Call {
                 ", from=" + from +
                 ", type=" + type +
                 ", method=" + method +
-                ", args=" + Arrays.toString(args) +
-                ", error='" + errorString + '\'' +
+//                ", args=" + Arrays.toString(args) +
+//                ", error='" + errorString + '\'' +
                 '}';
     }
 }

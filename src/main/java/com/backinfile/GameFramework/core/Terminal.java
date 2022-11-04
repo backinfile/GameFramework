@@ -1,7 +1,6 @@
 package com.backinfile.GameFramework.core;
 
 import com.backinfile.GameFramework.LogCore;
-import com.backinfile.GameFramework.proxy.ProxyManager;
 import com.backinfile.support.Time;
 import com.backinfile.support.func.Action1;
 
@@ -63,9 +62,8 @@ public class Terminal implements ITerminal {
     }
 
     @Override
-    public void returns(Call call, Object... results) {
-        Call callReturn = call.newCallReturn(results);
-        mNode.handleCall(callReturn);
+    public void returns(Call call) {
+        mNode.handleCall(call);
     }
 
     @Override
@@ -143,7 +141,12 @@ public class Terminal implements ITerminal {
      */
     private void invoke(Call call) {
         lastInCall = call;
-        ProxyManager.handleRequest(mPort, call);
+
+        try {
+            mPort.handleRequest(call);
+        } catch (Exception e) {
+            LogCore.core.error("handleRequest error of " + mPort.getClass().getName(), e);
+        }
     }
 
     /**

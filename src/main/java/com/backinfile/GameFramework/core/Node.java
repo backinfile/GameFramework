@@ -2,7 +2,6 @@ package com.backinfile.GameFramework.core;
 
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.serialize.SerializableManager;
-import com.backinfile.support.SysException;
 import com.backinfile.support.Utils;
 import com.backinfile.support.func.Action0;
 
@@ -158,7 +157,6 @@ public class Node {
         // 发送到此node的消息
         Port port = getPort(call.to.portID);
         if (port == null) {
-            LogCore.core.error("此call发送到未知port(" + call.to.portID + ")，已忽略", new SysException(""));
             return;
         }
         port.getTerminal().addCall(SerializableManager.clone(call));

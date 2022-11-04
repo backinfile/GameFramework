@@ -32,7 +32,7 @@ public interface ITerminal {
     /**
      * rpc返回
      */
-    void returns(Call call, Object... results);
+    void returns(Call call);
 
     /**
      * 监听rpc调用执行结果

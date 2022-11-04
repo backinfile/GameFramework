@@ -1,13 +1,13 @@
-package com.backinfile.GameFramework.proxy;
+package com.backinfile.GameFramework.core;
 
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.support.SysException;
 import com.backinfile.support.Utils;
+import com.backinfile.support.func.Function0;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public class Task<T> extends CompletableFuture<T> {
     public Task() {
@@ -49,16 +49,12 @@ public class Task<T> extends CompletableFuture<T> {
     public T join(long duration, String message) {
         while (!isDone()) {
             Utils.sleep(duration);
-            
+
             if (!Utils.isNullOrEmpty(message)) {
                 LogCore.core.info(message);
             }
         }
         return this.join();
-    }
-
-    public static <T> Task<T> of(Class<T> clazz) {
-        return new Task<>();
     }
 
     public static <T> Task<T> completedTask(T value) {
@@ -84,5 +80,53 @@ public class Task<T> extends CompletableFuture<T> {
         Task<T> task = new Task<>();
         task.completeExceptionally(e);
         return task;
+    }
+
+    public static Task<Void> run(Function0<Task<Void>> func) {
+        return func.invoke();
+    }
+
+    @Override
+    public CompletableFuture<T> whenComplete(BiConsumer<? super T, ? super Throwable> action) {
+        return super.whenComplete((r, ex) -> {
+            try {
+                action.accept(r, ex);
+            } catch (Exception e) {
+                throw new SysException("error in task", e);
+            }
+        });
+    }
+
+    @Override
+    public CompletableFuture<T> whenCompleteAsync(BiConsumer<? super T, ? super Throwable> action) {
+        return super.whenCompleteAsync((r, ex) -> {
+            try {
+                action.accept(r, ex);
+            } catch (Exception e) {
+                throw new SysException("error in task", e);
+            }
+        });
+    }
+
+    @Override
+    public CompletableFuture<T> whenCompleteAsync(BiConsumer<? super T, ? super Throwable> action, Executor executor) {
+        return super.whenCompleteAsync((r, ex) -> {
+            try {
+                action.accept(r, ex);
+            } catch (Exception e) {
+                throw new SysException("error in task", e);
+            }
+        }, executor);
+    }
+
+    @Override
+    public <U> CompletableFuture<U> thenCompose(Function<? super T, ? extends CompletionStage<U>> fn) {
+        return super.thenCompose((t) -> {
+            try {
+                return fn.apply(t);
+            } catch (Exception e) {
+                throw new SysException("error in task", e);
+            }
+        });
     }
 }

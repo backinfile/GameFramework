@@ -1,7 +1,5 @@
 package com.backinfile.GameFramework.db;
 
-import com.backinfile.support.SysException;
-
 public abstract class EntityBase {
     public int id;
 
@@ -17,17 +15,17 @@ public abstract class EntityBase {
     }
 
     public void save() {
-        switch (state) {
-            case STATE_NEW:
-                DB.insert(this);
-                break;
-            case STATE_NORMAL:
-                DB.update(this);
-                break;
-            case STATE_DELETE:
-                throw new SysException("try to save a deleted entity");
-        }
-        this.state = STATE_NORMAL;
+//        switch (state) {
+//            case STATE_NEW:
+//                DB.insert(this);
+//                break;
+//            case STATE_NORMAL:
+//                DB.update(this);
+//                break;
+//            case STATE_DELETE:
+//                throw new SysException("try to save a deleted entity");
+//        }
+//        this.state = STATE_NORMAL;
     }
 
     public void remove() {
