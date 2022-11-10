@@ -107,6 +107,9 @@ public class SerializableManager {
         MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
 
         for (Class<?> clazz : autoClassSet) {
+            if (ISerializable.class.isAssignableFrom(clazz)) {
+                continue;
+            }
             try {
                 String typeName = clazz.getName();
                 String simpleName = clazz.getSimpleName();
