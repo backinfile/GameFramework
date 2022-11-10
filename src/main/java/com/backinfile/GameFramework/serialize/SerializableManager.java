@@ -10,6 +10,9 @@ import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -99,6 +102,9 @@ public class SerializableManager {
         autoClassSet.addAll(reflections.getTypesAnnotatedWith(Serializable.class));
         autoClassSet.addAll(reflections.getTypesAnnotatedWith(DBEntity.class));
 
+        // public方法的Lookup
+        MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
+
         for (Class<?> clazz : autoClassSet) {
             try {
                 String typeName = clazz.getName();
@@ -129,11 +135,20 @@ public class SerializableManager {
 
                 Class<?> cls = ctClass.toClass();
 
-                Method writeTo = cls.getDeclaredMethod("writeTo", clazz, OutputStream.class);
-                Method readFrom = cls.getDeclaredMethod("readFrom", InputStream.class);
+                {
+                    // writeTo
+                    MethodType mt = MethodType.methodType(void.class, clazz, OutputStream.class);
+                    MethodHandle handle = publicLookup.findStatic(cls, "writeTo", mt);
+                    objectPackerMap.put(getCommonSerializeID(clazz), handle);
+                }
 
-                objectPackerMap.put(getCommonSerializeID(clazz), writeTo);
-                objectUnpackerMap.put(getCommonSerializeID(clazz), readFrom);
+                {
+                    // readFrom
+                    MethodType mt = MethodType.methodType(clazz, InputStream.class);
+                    MethodHandle handle = publicLookup.findStatic(cls, "readFrom", mt);
+                    objectUnpackerMap.put(getCommonSerializeID(clazz), handle);
+                }
+
                 autoCnt++;
             } catch (Exception e) {
                 LogCore.serialize.error("build class error: " + clazz.getName(), e);

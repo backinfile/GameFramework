@@ -6,8 +6,8 @@ import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.*;
 
 public class InputStream {
@@ -162,14 +162,14 @@ public class InputStream {
             }
             case SerializeTag.AUTO_SERIALIZE: {
                 int id = unpacker.unpackInt();
-                Method method = SerializableManager.getUnpackerObj(id);
-                if (method == null) {
+                MethodHandle handle = SerializableManager.getUnpackerObj(id);
+                if (handle == null) {
                     LogCore.serialize.error("未能反序列化" + id, new SysException());
                     return null;
                 }
                 try {
-                    return method.invoke(null, this);
-                } catch (Exception e) {
+                    return handle.invoke(this);
+                } catch (Throwable e) {
                     LogCore.serialize.error("unpackSerialize error", e);
                 }
                 return null;

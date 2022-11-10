@@ -6,7 +6,7 @@ import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandle;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -155,13 +155,13 @@ public class OutputStream {
             packer.packInt(SerializeTag.AUTO_SERIALIZE);
             int id = SerializableManager.getCommonSerializeID(obj);
             packer.packInt(id);
-            Method method = SerializableManager.getPackerObj(id);
-            if (method == null) {
+            MethodHandle handle = SerializableManager.getPackerObj(id);
+            if (handle == null) {
                 throw new Exception("尚未注册" + obj.getClass().getName());
             }
             try {
-                method.invoke(null, obj, this);
-            } catch (Exception e) {
+                handle.invoke(obj, this);
+            } catch (Throwable e) {
                 LogCore.serialize.error("packSerialize error", e);
             }
         } else {
