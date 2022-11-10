@@ -1,3 +1,5 @@
+package test;
+
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.core.*;
 import com.backinfile.GameFramework.serialize.SerializableManager;
@@ -6,6 +8,9 @@ import com.backinfile.support.func.CommonFunction;
 import com.backinfile.support.func.Function2;
 import com.ea.async.Async;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ServiceTest {
     public static class Service1 extends Service {
@@ -79,14 +84,11 @@ public class ServiceTest {
 
 
         static {
-            Service1Proxy instance = createInstance();
-            instance.setMethod(METHOD_KEY_GET_TEST_STRING, new CommonFunction(2, (Function2) ((service, value) -> {
+            Map<Integer, CommonFunction> methodMap = new HashMap<>();
+            methodMap.put(METHOD_KEY_GET_TEST_STRING, new CommonFunction(2, (Function2) ((service, value) -> {
                 return ((Service1) service).getTestString((int) value);
             })));
-            setProxyBase(TARGET_PORT_ID, instance);
-        }
-
-        public static void registerProxyClass() {
+            addMethodMap(TARGET_PORT_ID, methodMap);
         }
 
         public Task<String> getTestString(int value) {

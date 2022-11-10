@@ -3,29 +3,19 @@ package com.backinfile.GameFramework.core;
 import com.backinfile.support.SysException;
 import com.backinfile.support.func.CommonFunction;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class ServiceProxyBase {
-    private static final Map<String, ServiceProxyBase> proxyBaseMap = new HashMap<>();
+    private static final Map<String, Map<Integer, CommonFunction>> serviceMethodMap = new ConcurrentHashMap<>();
 
-    protected static void setProxyBase(String name, ServiceProxyBase proxyBase) {
-        proxyBaseMap.put(name, proxyBase);
+    protected static void addMethodMap(String name, Map<Integer, CommonFunction> methodMap) {
+        serviceMethodMap.put(name, Collections.unmodifiableMap(methodMap));
     }
 
-    static ServiceProxyBase getProxyBase(Service service) {
-        return proxyBaseMap.get(service.getClass().getName());
-    }
-
-
-    private final Map<Integer, CommonFunction> methodMap = new HashMap<>();
-
-    protected void setMethod(int methodKey, CommonFunction commonFunction) {
-        methodMap.put(methodKey, commonFunction);
-    }
-
-    CommonFunction getMethod(int methodKey) {
-        return methodMap.get(methodKey);
+    public static Map<Integer, CommonFunction> getMethodMap(Service service) {
+        return serviceMethodMap.get(service.getClass().getName());
     }
 
 

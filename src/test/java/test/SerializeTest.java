@@ -1,3 +1,5 @@
+package test;
+
 import com.backinfile.GameFramework.serialize.*;
 
 import java.util.Arrays;

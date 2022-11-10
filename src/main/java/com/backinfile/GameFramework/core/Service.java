@@ -4,9 +4,11 @@ import com.backinfile.GameFramework.LogCore;
 import com.backinfile.support.Time;
 import com.backinfile.support.func.CommonFunction;
 
+import java.util.Map;
+
 public abstract class Service extends Port {
     private long nextSecMills = 0;
-    private ServiceProxyBase proxyBase = null;
+    private Map<Integer, CommonFunction> methodMap = null;
 
     public Service() {
         this.setPortId(this.getClass().getName());
@@ -39,15 +41,15 @@ public abstract class Service extends Port {
     @SuppressWarnings("unchecked")
     @Override
     void handleRequest(Call call) {
-        if (proxyBase == null) {
-            proxyBase = ServiceProxyBase.getProxyBase(this);
-            if (proxyBase == null) {
+        if (methodMap == null) {
+            methodMap = ServiceProxyBase.getMethodMap(this);
+            if (methodMap == null) {
                 LogCore.core.error("getProxyBase error {}", this.getClass().getName());
                 return;
             }
         }
 
-        CommonFunction method = proxyBase.getMethod(call.method);
+        CommonFunction method = methodMap.get(call.method);
         if (method == null) {
             LogCore.core.error("not find methodKey:{} of:{}", call.method, this.getClass().getName());
             return;

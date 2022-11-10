@@ -1,3 +1,5 @@
+package test;
+
 import com.backinfile.GameFramework.core.Port;
 import org.junit.jupiter.api.Test;
 
@@ -42,8 +44,8 @@ public class ProxyTest {
     @Test
     public void testProxy() {
 //        Async.init();
-//        ProxyManager.registerAll(ProxyTest.class.getClassLoader());
-//        SerializableManager.registerAll(ProxyTest.class.getClassLoader());
+//        ProxyManager.registerAll(test.ProxyTest.class.getClassLoader());
+//        SerializableManager.registerAll(test.ProxyTest.class.getClassLoader());
 //
 //        Node node = new Node();
 //        node.addPort(new Port1(), Port.of(new TmpAsyncObj()));

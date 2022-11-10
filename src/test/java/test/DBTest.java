@@ -1,3 +1,5 @@
+package test;
+
 import com.backinfile.GameFramework.core.Port;
 import com.backinfile.GameFramework.db.DBEntity;
 import com.backinfile.GameFramework.db.EntityBase;
@@ -25,8 +27,8 @@ public class DBTest {
     @Test
     public void testDB() {
 //        Async.init();
-//        DBManager.registerAll(DBTest.class.getClassLoader());
-//        SerializableManager.registerAll(DBTest.class.getClassLoader());
+//        DBManager.registerAll(test.DBTest.class.getClassLoader());
+//        SerializableManager.registerAll(test.DBTest.class.getClassLoader());
 //
 //        Node node = new Node();
 //        node.addPort(new Port1(), Port.of(new DBAsyncObject("game.db")));

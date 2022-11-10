@@ -11,4 +11,6 @@ public class LogCore {
     public static Logger client = LoggerFactory.getLogger("core.client");
     public static Logger server = LoggerFactory.getLogger("core.server");
     public static Logger db = LoggerFactory.getLogger("core.db");
+    public static Logger gen = LoggerFactory.getLogger("core.gen");
+    public static Logger test = LoggerFactory.getLogger("core.test");
 }

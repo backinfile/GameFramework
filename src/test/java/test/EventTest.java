@@ -1,3 +1,5 @@
+package test;
+
 import com.backinfile.GameFramework.event.EventBase;
 import com.backinfile.GameFramework.event.EventEx;
 import com.backinfile.GameFramework.event.EventListener;
