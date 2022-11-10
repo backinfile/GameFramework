@@ -49,6 +49,7 @@ class TestClient {
         Client client = new Client(NetUsageAndTest.HelloClientHandler::new, "", 10088);
         client.start();
         Utils.readExit();
+        client.stopClient();
     }
 }
 
@@ -58,6 +59,7 @@ class TestServer {
         Server server = new Server(NetUsageAndTest.EchoServerHandler::new, 10088);
         server.start();
         Utils.readExit();
+        server.stopServer();
     }
 }
 

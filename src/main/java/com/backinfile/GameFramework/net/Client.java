@@ -63,7 +63,7 @@ public class Client extends Thread {
             LogCore.client.info("connected: {}:{}", host, port);
 
             countDownLatch.await();
-            Channel.closeFuture().sync();
+            Channel.close().sync();
             LogCore.client.info("connection close {}:{}", host, port);
         } finally {
             group.shutdownGracefully().sync();

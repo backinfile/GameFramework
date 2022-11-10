@@ -58,7 +58,8 @@ public class Server extends Thread {
             LogCore.server.info("start listen:{}", port);
 
             countDownLatch.await();
-            channel.closeFuture().sync();
+            channel.close().sync();
+            LogCore.server.info("stop listen:{}", port);
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
