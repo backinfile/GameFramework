@@ -2,6 +2,7 @@ package com.backinfile.GameFramework.serialize;
 
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.db.DBEntity;
+import com.backinfile.support.SysException;
 import com.backinfile.support.Utils;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -110,6 +111,11 @@ public class SerializableManager {
                 String typeName = clazz.getName();
                 String simpleName = clazz.getSimpleName();
                 List<Field> fields = getSerializableFields(clazz);
+                for (Field field : fields) {
+                    if (!checkField(field)) {
+                        throw new SysException("类型" + typeName + "的字段" + field.getName() + "不能序列化");
+                    }
+                }
 
                 CtClass ctClass = pool.makeClass("com.backinfile.GameFramework.serialize.gen." + simpleName + "Serializer");
                 {
@@ -194,6 +200,28 @@ public class SerializableManager {
             }
         }
         LogCore.serialize.info("register enum over cnt:{}", cnt);
+    }
+
+    public static boolean checkField(Field field) {
+        Class<?> clazz = field.getType();
+        if (clazz.isPrimitive() || clazz.isArray()) {
+            return true;
+        }
+        if (clazz == String.class || Number.class.isAssignableFrom(clazz)) {
+            return true;
+        }
+        if (List.class.isAssignableFrom(clazz) || Set.class.isAssignableFrom(clazz)
+                || Map.class.isAssignableFrom(clazz) || Enum.class.isAssignableFrom(clazz)) {
+            return true;
+        }
+
+        if (ISerializable.class.isAssignableFrom(clazz)) {
+            return true;
+        }
+        if (clazz.isAnnotationPresent(Serializable.class)) {
+            return true;
+        }
+        return false;
     }
 
     private static String getWriteObjString(Field field) {
