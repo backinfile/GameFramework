@@ -1,5 +1,11 @@
+import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.core.*;
+import com.backinfile.GameFramework.serialize.SerializableManager;
+import com.backinfile.support.Time;
+import com.backinfile.support.func.CommonFunction;
+import com.backinfile.support.func.Function2;
 import com.ea.async.Async;
+import org.junit.jupiter.api.Test;
 
 public class ServiceTest {
     public static class Service1 extends Service {
@@ -20,6 +26,7 @@ public class ServiceTest {
 
         @RPCMethod
         public Task<String> getTestString(int value) {
+            LogCore.core.info("req value:{}", value);
             return Task.completedTask(this.getClass().getName());
         }
     }
@@ -28,7 +35,17 @@ public class ServiceTest {
 
         @Override
         public void init() {
-            
+            LogCore.core.info("time:{}", getTime());
+            getTimerQueue().applyTimer(Time.SEC, () -> {
+                Task.run(() -> {
+                    Service1Proxy proxy = Service1Proxy.createInstance();
+                    String result = Async.await(proxy.getTestString(124));
+                    LogCore.core.info("get result:{}", result);
+                    LogCore.core.info("time:{}", getTime());
+                    Node.Instance.abort();
+                    return Task.completedTask();
+                });
+            });
         }
 
         @Override
@@ -42,6 +59,7 @@ public class ServiceTest {
         }
     }
 
+    @SuppressWarnings("all")
     public static class Service1Proxy extends ServiceProxyBase {
         public static final String TARGET_PORT_ID = Service1.class.getName();
         private static final long TARGET_OBJ_ID = 0L;
@@ -60,9 +78,34 @@ public class ServiceTest {
         private static final int METHOD_KEY_GET_TEST_STRING = 1;
 
 
-        public Task<String> getTestString(int value) {
-            Object result = Async.await(request(curPort, TARGET_PORT_ID, TARGET_OBJ_ID, METHOD_KEY_GET_TEST_STRING, value));
-            return Task.completedTask((String) result);
+        static {
+            Service1Proxy instance = createInstance();
+            instance.setMethod(METHOD_KEY_GET_TEST_STRING, new CommonFunction(2, (Function2) ((service, value) -> {
+                return ((Service1) service).getTestString((int) value);
+            })));
+            setProxyBase(TARGET_PORT_ID, instance);
         }
+
+        public static void registerProxyClass() {
+        }
+
+        public Task<String> getTestString(int value) {
+            return request(curPort, TARGET_PORT_ID, TARGET_OBJ_ID, METHOD_KEY_GET_TEST_STRING, value);
+        }
+    }
+
+    @Test
+    public void test() {
+        Async.init();
+        SerializableManager.registerAll(ServiceTest.class.getClassLoader());
+
+
+        Node node = new Node();
+        node.addPort(new Service1(), new Service2());
+        node.startUp();
+        node.waitAllPortStartupFinish();
+//        Utils.sleep(Time.SEC * 5);
+//        node.abort();
+        node.join();
     }
 }

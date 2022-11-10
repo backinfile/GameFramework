@@ -6,7 +6,7 @@ import com.backinfile.support.func.CommonFunction;
 
 public abstract class Service extends Port {
     private long nextSecMills = 0;
-    private MethodHub methodHub = null;
+    private ServiceProxyBase proxyBase = null;
 
     public Service() {
         this.setPortId(this.getClass().getName());
@@ -39,21 +39,21 @@ public abstract class Service extends Port {
     @SuppressWarnings("unchecked")
     @Override
     void handleRequest(Call call) {
-        if (methodHub == null) {
-            methodHub = ServiceProxyBase.createMethodHub(this);
-            if (methodHub == null) {
-                LogCore.core.error("create methodHub error {}", this.getClass().getName());
+        if (proxyBase == null) {
+            proxyBase = ServiceProxyBase.getProxyBase(this);
+            if (proxyBase == null) {
+                LogCore.core.error("getProxyBase error {}", this.getClass().getName());
                 return;
             }
         }
 
-        CommonFunction method = methodHub.get(call.method);
+        CommonFunction method = proxyBase.getMethod(call.method);
         if (method == null) {
             LogCore.core.error("not find methodKey:{} of:{}", call.method, this.getClass().getName());
             return;
         }
         try {
-            Task<Object> task = (Task<Object>) method.invoke(call.args);
+            Task<Object> task = (Task<Object>) method.invoke(this, call.args);
             task.whenComplete((obj, ex) -> {
                 if (ex != null) {
                     Call callReturn = call.newErrorReturn(ex.getMessage());

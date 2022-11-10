@@ -68,6 +68,7 @@ public class Node {
             Utils.sleep(1000);
             LogCore.core.info("waiting all port startup...");
         }
+        LogCore.core.info("all port startup finished");
     }
 
     public void addPort(Port... ports) {
@@ -79,8 +80,8 @@ public class Node {
         this.post(() -> {
             for (Port port : ports) {
                 LogCore.core.info("add port {} of class {}", port.getPortId(), port.getClass().getName());
-                port.startup();
                 portsWaitForRun.add(port);
+                port.post(port::startup);
             }
         });
     }

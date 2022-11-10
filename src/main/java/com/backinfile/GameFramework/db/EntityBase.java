@@ -29,9 +29,9 @@ public abstract class EntityBase {
     }
 
     public void remove() {
-        if (state == STATE_NORMAL) {
-            DB.delete(this);
-        }
-        this.state = STATE_DELETE;
+//        if (state == STATE_NORMAL) {
+//            DB.delete(this);
+//        }
+//        this.state = STATE_DELETE;
     }
 }
