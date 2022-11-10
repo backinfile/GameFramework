@@ -23,13 +23,8 @@ public class SerializeTest {
         public Integer integer;
         public SerializableTestClass1 serializableTestClass1;
         public SerializableTestClass3 serializableTestClass3;
-        public A a;
     }
 
-
-    public static class A {
-
-    }
 
     public static class SerializableTestClass3 implements ISerializable {
         public int value;
