@@ -1,6 +1,7 @@
 package com.backinfile.GameFramework.net;
 
 import com.backinfile.GameFramework.LogCore;
+import com.backinfile.support.Utils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -9,18 +10,24 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Function;
 
 public class Client extends Thread {
     public static Channel Channel = null;
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final String host;
     private final int port;
-    private final ClientHandler clientHandler;
+    private final Function<Client, ClientHandler> handlerSupplier;
 
-    public Client(ClientHandler clientHandler, String host, int port) {
-        this.clientHandler = clientHandler;
-        this.host = host;
+    public Client(Function<Client, ClientHandler> handlerSupplier, String host, int port) {
+        this.handlerSupplier = handlerSupplier != null ? handlerSupplier : ClientHandler::new;
+        this.host = Utils.isNullOrEmpty(host) ? "127.0.0.1" : host;
         this.port = port;
+    }
+
+
+    public Client(String host, int port) {
+        this(null, host, port);
     }
 
     public Client(int port) {
@@ -47,7 +54,7 @@ public class Client extends Thread {
                 @Override
                 protected void initChannel(SocketChannel socketChannel) {
                     ChannelPipeline pipeline = socketChannel.pipeline();
-                    pipeline.addLast(new Decoder(), new Encoder(), clientHandler != null ? clientHandler : new ClientHandler());
+                    pipeline.addLast(new Decoder(), new Encoder(), handlerSupplier.apply(Client.this));
                 }
             });
 
@@ -67,8 +74,13 @@ public class Client extends Thread {
         countDownLatch.countDown();
     }
 
-    public class ClientHandler extends ChannelInboundHandlerAdapter {
+    public static class ClientHandler extends ChannelInboundHandlerAdapter {
+        private final Client client;
         private ChannelConnection connection = null;
+
+        public ClientHandler(Client client) {
+            this.client = client;
+        }
 
 
         @Override
@@ -82,7 +94,7 @@ public class Client extends Thread {
         public void channelInactive(ChannelHandlerContext ctx) {
             Channel channel = ctx.channel();
             LogCore.client.info("channelInactive address:{} id:{}", channel.remoteAddress(), connection.getId());
-            stopClient();
+            client.stopClient();
         }
 
         @Override
@@ -97,5 +109,8 @@ public class Client extends Thread {
                     connection.getId(), cause.getClass().getName(), cause.getMessage());
         }
 
+        public ChannelConnection getConnection() {
+            return connection;
+        }
     }
 }

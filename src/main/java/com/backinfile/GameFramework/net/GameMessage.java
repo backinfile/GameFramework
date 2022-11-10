@@ -15,6 +15,7 @@ import com.backinfile.support.Utils;
 public class GameMessage {
     private static final int CHECK_CODE = Utils.getHashCode("GameMessage");
     private final Object obj;
+    private static volatile boolean EnableStringType = false;
 
     private GameMessage(Object obj) {
         this.obj = obj;
@@ -31,10 +32,15 @@ public class GameMessage {
         if (obj == null) {
             return false;
         }
+        if (EnableStringType) {
+            if (obj instanceof String) {
+                return true;
+            }
+        }
         if (obj instanceof ISerializable) {
             return true;
         }
-        if (obj.getClass().getAnnotation(Serializable.class) != null) {
+        if (obj.getClass().isAnnotationPresent(Serializable.class)) {
             return true;
         }
         return false;
@@ -77,5 +83,9 @@ public class GameMessage {
     @SuppressWarnings("unchecked")
     public <T> T getMessage() {
         return (T) obj;
+    }
+
+    public static void setEnableStringType(boolean enable) {
+        EnableStringType = enable;
     }
 }

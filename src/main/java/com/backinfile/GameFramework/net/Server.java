@@ -9,19 +9,20 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 public class Server extends Thread {
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final int port;
     private static final AtomicLong idMax = new AtomicLong(1);
-    private final ServerHandler serverHandler;
+    private final Supplier<ServerHandler> handlerSupplier;
 
     public Server(int port) {
         this(null, port);
     }
 
-    public Server(ServerHandler serverHandler, int port) {
-        this.serverHandler = serverHandler;
+    public Server(Supplier<ServerHandler> handlerSupplier, int port) {
+        this.handlerSupplier = handlerSupplier != null ? handlerSupplier : ServerHandler::new;
         this.port = port;
         idMax.getAndSet(1);
     }
@@ -48,7 +49,7 @@ public class Server extends Thread {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) {
                             ChannelPipeline pipeline = socketChannel.pipeline();
-                            pipeline.addLast(new Decoder(), new Encoder(), serverHandler != null ? serverHandler : new ServerHandler());
+                            pipeline.addLast(new Decoder(), new Encoder(), handlerSupplier.get());
                         }
                     });
 
@@ -95,6 +96,10 @@ public class Server extends Thread {
             Channel channel = ctx.channel();
             LogCore.server.error("exceptionCaught address:{} id:{} error:{} {}", channel.remoteAddress(),
                     connection.getId(), cause.getClass().getName(), cause.getMessage());
+        }
+
+        public ChannelConnection getConnection() {
+            return connection;
         }
     }
 }
