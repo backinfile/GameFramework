@@ -1,5 +1,7 @@
 package test;
 
+import com.backinfile.GameFramework.db.DBEntity;
+import com.backinfile.GameFramework.db.EntityBase;
 import com.backinfile.GameFramework.serialize.*;
 
 import java.util.Arrays;
@@ -25,6 +27,12 @@ public class SerializeTest {
         public Integer integer;
         public SerializableTestClass1 serializableTestClass1;
         public SerializableTestClass3 serializableTestClass3;
+    }
+
+    @DBEntity(tableName = "test")
+    public static class DBSerializableTestDB extends EntityBase {
+        public long playerId;
+        public String content;
     }
 
 

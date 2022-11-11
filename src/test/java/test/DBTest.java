@@ -41,7 +41,7 @@ public class DBTest {
     }
 
 
-    @DBEntity(table = "test")
+    @DBEntity(tableName = "test")
     public static class TestDB extends EntityBase {
         public String name;
         public int playerId;

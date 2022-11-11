@@ -7,15 +7,21 @@ import java.lang.annotation.Target;
 
 /**
  * 标记一个类为DB类
- * 目前支持的类型 int long String
+ * 目前支持的类型 int long float double String
+ * 需要有默认构造器; 不要有逻辑，只定义字段!
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface DBEntity {
-    String extraIndex() default "playerId";
-
     /**
      * 表名
      */
-    String table();
+    String tableName();
+
+
+    /**
+     * 额外的查询字段
+     */
+    String extraIndex() default "playerId";
+
 }

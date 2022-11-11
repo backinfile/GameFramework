@@ -1,6 +1,9 @@
-package com.backinfile.GameFramework.net;
+package test;
 
 
+import com.backinfile.GameFramework.net.Client;
+import com.backinfile.GameFramework.net.GameMessage;
+import com.backinfile.GameFramework.net.Server;
 import com.backinfile.support.Utils;
 import io.netty.channel.ChannelHandlerContext;
 

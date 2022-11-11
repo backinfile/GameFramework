@@ -2,9 +2,6 @@ package com.backinfile.GameFramework.db;
 
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.support.Utils;
-import com.backinfile.support.func.Action2;
-import com.backinfile.support.func.Function0;
-import com.backinfile.support.func.Function1;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -13,7 +10,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,121 +17,24 @@ import java.util.stream.Collectors;
 public class DBManager {
     final static Map<Class<?>, DBTable> tableMap = new HashMap<>();
     final static Map<String, DBTable> tableNameMap = new HashMap<>();
-    private static boolean SQL_LOG = true;
-
-    static class DBTable {
-        public String tableName;
-        public DBField keyFiled;
-        public DBField extraIndexFiled;
-        public List<DBField> fields = new ArrayList<>();
-        public Function0<Object> constructor;
-
-        public DBTable(String tableName) {
-            this.tableName = tableName;
-        }
-
-        public DBField getFieldByName(String filedName) {
-            for (DBField field : fields) {
-                if (field.name.equals(filedName)) {
-                    return field;
-                }
-            }
-            return null;
-        }
-
-        public Object parseResult(ResultSet resultSet) {
-            Object result = constructor.invoke();
-            if (result != null) {
-                for (DBField field : fields) {
-                    Object value = field.type.parseResult(resultSet, field.name);
-                    field.setter.invoke(result, value);
-                }
-            }
-            return result;
-        }
-    }
-
-    static class DBField {
-        public boolean key;
-        public boolean extraIndex;
-        public String name;
-        public FieldType type;
-        public Action2<Object, Object> setter;
-        public Function1<Object, Object> getter;
-
-        public String getStringFieldValue(Object obj) {
-            if (type == FieldType.String) {
-                return "'" + getter.invoke(obj) + "'";
-            }
-            return getter.invoke(obj).toString();
-        }
-    }
-
-    enum FieldType {
-        Int(int.class, "INTEGER") {
-            @Override
-            public Object getResult(ResultSet rs, java.lang.String p) throws SQLException {
-                return rs.getInt(p);
-            }
-        },
-        Long(long.class, "BIGINT") {
-            @Override
-            public Object getResult(ResultSet rs, java.lang.String p) throws SQLException {
-                return rs.getLong(p);
-            }
-        },
-        Float(float.class, "FLOAT") {
-            @Override
-            public Object getResult(ResultSet rs, java.lang.String p) throws SQLException {
-                return rs.getFloat(p);
-            }
-        },
-        Double(double.class, "DOUBLE") {
-            @Override
-            public Object getResult(ResultSet rs, java.lang.String p) throws SQLException {
-                return rs.getDouble(p);
-            }
-        },
-        String(String.class, "TEXT") {
-            @Override
-            public Object getResult(ResultSet rs, java.lang.String p) throws SQLException {
-                return rs.getString(p);
-            }
-        },
-        ;
-        public final Class<?> javaType;
-        public final String sqlType;
-
-        FieldType(Class<?> javaType, java.lang.String sqlType) {
-            this.javaType = javaType;
-            this.sqlType = sqlType;
-        }
-
-        public static FieldType getTypeBySqlType(String sqlType) {
-            for (FieldType fieldType : FieldType.values()) {
-                if (fieldType.sqlType.equalsIgnoreCase(sqlType)) {
-                    return fieldType;
-                }
-            }
-            return null;
-        }
-
-        protected abstract Object getResult(ResultSet rs, String p) throws SQLException;
-
-        public Object parseResult(ResultSet rs, String p) {
-            try {
-                return getResult(rs, p);
-            } catch (SQLException e) {
-                LogCore.db.error("error in get " + p, e);
-            }
-            return "";
-        }
-    }
+    private static volatile boolean SQL_LOG = true;
+    private static volatile ISaveProvider saveProvider = null;
 
     public static void enableSqlLog(boolean log) {
         SQL_LOG = log;
     }
 
+    public static void setSaveProvider(ISaveProvider saveProvider) {
+        DBManager.saveProvider = saveProvider;
+    }
+
+    public static ISaveProvider getSaveProvider() {
+        return saveProvider;
+    }
+
+    /**
+     * 注册db表结构
+     */
     public static void registerAll(ClassLoader... classLoaders) {
         Reflections reflections = new Reflections(
                 new SubTypesScanner(false),
@@ -159,7 +58,7 @@ public class DBManager {
                 continue;
             }
 
-            DBTable table = new DBTable(annotation.table());
+            DBTable table = new DBTable(annotation.tableName());
             Constructor<?> finalConstructor = constructor;
             table.constructor = () -> {
                 try {
@@ -233,7 +132,7 @@ public class DBManager {
         }
     }
 
-    public static Object query(Connection connection, String tableName, int id) {
+    public static Object query(Connection connection, String tableName, long id) {
         DBTable table = tableNameMap.get(tableName);
         if (table == null) {
             LogCore.db.error("query unknown table {}", tableName);
@@ -273,7 +172,7 @@ public class DBManager {
         return resultList;
     }
 
-    public static List<Object> queryAll(Connection connection, String tableName, int playerId) {
+    public static List<Object> queryAll(Connection connection, String tableName, long playerId) {
         DBTable table = tableNameMap.get(tableName);
         if (table == null || table.extraIndexFiled == null) {
             LogCore.db.error("query unknown table {}", tableName);
@@ -346,7 +245,7 @@ public class DBManager {
 //    DELETE FROM Customers
 //    WHERE CustomerName='Alfreds Futterkiste';
 
-    public static int delete(Connection connection, String tableName, int id) {
+    public static int delete(Connection connection, String tableName, long id) {
         DBTable table = tableNameMap.get(tableName);
         String sql = Utils.format("DELETE FROM {} WHERE `{}`={}", table.tableName, table.keyFiled.name, id);
         return executeUpdateSql(connection, sql);
