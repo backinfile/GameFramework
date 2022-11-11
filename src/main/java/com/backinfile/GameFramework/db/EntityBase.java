@@ -8,6 +8,7 @@ public abstract class EntityBase {
     public static final int STATE_NEW = 0;
     public static final int STATE_NORMAL = 1;
     public static final int STATE_DELETE = 2;
+    public static final int STATE_SERIALIZE = 3; // 序列化状态，不可修改
 
     private int state = STATE_NEW;
     private ISaveProvider saveProvider = DBManager.getSaveProvider();
@@ -34,6 +35,8 @@ public abstract class EntityBase {
                 break;
             case STATE_DELETE:
                 throw new SysException("try to save a deleted entity class:" + this.getClass().getName());
+            case STATE_SERIALIZE:
+                throw new SysException("try to save a serialized entity class:" + this.getClass().getName());
         }
         this.state = STATE_NORMAL;
     }

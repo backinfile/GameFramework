@@ -4,6 +4,8 @@ import com.backinfile.GameFramework.event.EventBase;
 import com.backinfile.GameFramework.event.EventEx;
 import com.backinfile.GameFramework.event.EventListener;
 
+import java.util.Collections;
+
 public class EventTest {
 
     public static class EventGo extends EventBase {
@@ -24,7 +26,7 @@ public class EventTest {
 
     @org.junit.jupiter.api.Test
     public void testEvent() {
-        EventEx.registerAll(SerializeTest.class.getClassLoader());
+        EventEx.registerAll(Collections.emptyList(), Collections.singletonList(SerializeTest.class.getClassLoader()));
 
         EventEx.fire(new EventGo(123));
 

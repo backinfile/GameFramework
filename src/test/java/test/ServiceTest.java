@@ -9,6 +9,7 @@ import com.backinfile.support.func.Function2;
 import com.ea.async.Async;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -99,7 +100,7 @@ public class ServiceTest {
     @Test
     public void test() {
         Async.init();
-        SerializableManager.registerAll(ServiceTest.class.getClassLoader());
+        SerializableManager.registerAll(Collections.emptyList(), Collections.singletonList(ServiceTest.class.getClassLoader()));
 
 
         Node node = new Node();

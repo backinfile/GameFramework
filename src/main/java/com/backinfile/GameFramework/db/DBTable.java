@@ -34,6 +34,9 @@ class DBTable {
                 field.setter.invoke(result, value);
             }
         }
+        if (result instanceof EntityBase) {
+            ((EntityBase) result).setState(EntityBase.STATE_NORMAL);
+        }
         return result;
     }
 }

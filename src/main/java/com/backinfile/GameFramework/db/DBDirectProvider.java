@@ -53,6 +53,10 @@ public class DBDirectProvider implements ISaveProvider, ILoadProvider {
         return connection;
     }
 
+    public void open() {
+        getConnection();
+    }
+
     public void close() {
         if (connection != null) {
             try {

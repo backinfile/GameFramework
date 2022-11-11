@@ -1,6 +1,7 @@
 package com.backinfile.GameFramework.serialize;
 
 import com.backinfile.GameFramework.LogCore;
+import com.backinfile.GameFramework.db.EntityBase;
 import com.backinfile.support.SysException;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -168,7 +169,12 @@ public class InputStream {
                     return null;
                 }
                 try {
-                    return handle.invoke(this);
+                    // 设置db为不可存储状态
+                    Object obj = handle.invoke(this);
+                    if (obj instanceof EntityBase) {
+                        ((EntityBase) obj).setState(EntityBase.STATE_SERIALIZE);
+                    }
+                    return obj;
                 } catch (Throwable e) {
                     LogCore.serialize.error("unpackSerialize error", e);
                 }

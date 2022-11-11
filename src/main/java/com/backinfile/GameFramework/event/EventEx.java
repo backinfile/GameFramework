@@ -44,16 +44,16 @@ public class EventEx {
 
     private static boolean registered = false;
 
-    public static void registerAll(ClassLoader... classLoaders) {
+    public static void registerAll(List<String> packagePaths, List<ClassLoader> classLoaders) {
         if (registered) {
             return;
         }
         registered = true;
-        
+
         Reflections reflections = new Reflections(
                 new MethodAnnotationsScanner(),
                 EventEx.class.getClassLoader(),
-                classLoaders);
+                packagePaths, classLoaders);
 
         listenerMap.clear();
         for (Method method : reflections.getMethodsAnnotatedWith(EventListener.class)) {

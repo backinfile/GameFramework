@@ -14,6 +14,7 @@ import java.sql.Statement;
 import java.util.*;
 import java.util.stream.Collectors;
 
+// TODO db更新
 public class DBManager {
     final static Map<Class<?>, DBTable> tableMap = new HashMap<>();
     final static Map<String, DBTable> tableNameMap = new HashMap<>();
@@ -35,10 +36,10 @@ public class DBManager {
     /**
      * 注册db表结构
      */
-    public static void registerAll(ClassLoader... classLoaders) {
+    public static void registerAll(List<String> packagePaths, List<ClassLoader> classLoaders) {
         Reflections reflections = new Reflections(
                 new SubTypesScanner(false),
-                classLoaders);
+                packagePaths, classLoaders);
         for (Class<?> clazz : reflections.getSubTypesOf(EntityBase.class)) {
             DBEntity annotation = clazz.getAnnotation(DBEntity.class);
             if (annotation == null) {

@@ -46,7 +46,7 @@ public class SerializableManager {
 
     private static boolean registered = false;
 
-    public static void registerAll(ClassLoader... classLoaders) {
+    public static void registerAll(List<String> packagePaths, List<ClassLoader> classLoaders) {
         if (registered) {
             return;
         }
@@ -56,7 +56,7 @@ public class SerializableManager {
                 new SubTypesScanner(false),
                 new TypeAnnotationsScanner(),
                 SerializableManager.class.getClassLoader(),
-                classLoaders);
+                packagePaths, classLoaders);
         registerAllEnum(reflections);
         registerAllSerialize(reflections);
     }
@@ -85,6 +85,9 @@ public class SerializableManager {
             if (Modifier.isAbstract(clazz.getModifiers()) || Modifier.isInterface(clazz.getModifiers())) {
                 continue;
             }
+            if (clazz.isAnnotationPresent(DBEntity.class)) {
+                continue;
+            }
             try {
                 int id = getCommonSerializeID(clazz);
                 Constructor<?> constructor = clazz.getDeclaredConstructor();
@@ -107,7 +110,7 @@ public class SerializableManager {
         MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
 
         for (Class<?> clazz : autoClassSet) {
-            if (ISerializable.class.isAssignableFrom(clazz)) {
+            if (ISerializable.class.isAssignableFrom(clazz) && !clazz.isAnnotationPresent(DBEntity.class)) {
                 continue;
             }
             try {
@@ -221,7 +224,7 @@ public class SerializableManager {
         if (ISerializable.class.isAssignableFrom(clazz)) {
             return true;
         }
-        if (clazz.isAnnotationPresent(Serializable.class)) {
+        if (clazz.isAnnotationPresent(Serializable.class) || clazz.isAnnotationPresent(DBEntity.class)) {
             return true;
         }
         return false;
