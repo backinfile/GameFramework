@@ -55,7 +55,8 @@ public class SerializableManager {
         Reflections reflections = new Reflections(
                 new SubTypesScanner(false),
                 new TypeAnnotationsScanner(),
-                SerializableManager.class.getClassLoader(),
+                LogCore.class.getClassLoader(),
+                LogCore.class.getPackage().getName(),
                 packagePaths, classLoaders);
         registerAllEnum(reflections);
         registerAllSerialize(reflections);

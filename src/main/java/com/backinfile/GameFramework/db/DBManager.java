@@ -20,6 +20,7 @@ public class DBManager {
     final static Map<String, DBTable> tableNameMap = new HashMap<>();
     private static volatile boolean SQL_LOG = true;
     private static volatile ISaveProvider saveProvider = null;
+    private static boolean initOver = false;
 
     public static void enableSqlLog(boolean log) {
         SQL_LOG = log;
@@ -37,8 +38,15 @@ public class DBManager {
      * 注册db表结构
      */
     public static void registerAll(List<String> packagePaths, List<ClassLoader> classLoaders) {
+        if (initOver) {
+            return;
+        }
+        initOver = true;
+
         Reflections reflections = new Reflections(
                 new SubTypesScanner(false),
+                LogCore.class.getClassLoader(),
+                LogCore.class.getPackage().getName(),
                 packagePaths, classLoaders);
         for (Class<?> clazz : reflections.getSubTypesOf(EntityBase.class)) {
             DBEntity annotation = clazz.getAnnotation(DBEntity.class);
@@ -111,6 +119,7 @@ public class DBManager {
             tableMap.put(clazz, table);
             tableNameMap.put(table.tableName, table);
         }
+        LogCore.db.info("register db class cnt:{}", tableMap.size());
     }
 
     // 更新表结构

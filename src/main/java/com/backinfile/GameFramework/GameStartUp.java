@@ -8,23 +8,25 @@ import com.backinfile.GameFramework.event.EventEx;
 import com.backinfile.GameFramework.serialize.SerializableManager;
 import com.ea.async.Async;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
 public class GameStartUp {
     public static final String PACKAGE_PATH = "com.backinfile.GameFramework";
 
+    // 提供一个当前工作项目的类 进行初始化
+    public static void initAll(Class<?> clazz) {
+        initAll(Collections.singletonList(clazz.getPackage().getName()), Collections.singletonList(clazz.getClassLoader()));
+    }
+
+    // 进行初始化
     public static void initAll(List<String> packagePaths, List<ClassLoader> classLoaders) {
-        List<String> finalPackagePaths = new ArrayList<>(packagePaths);
-        finalPackagePaths.add(PACKAGE_PATH);
-        List<ClassLoader> finalClassLoaders = new ArrayList<>(classLoaders);
-        finalClassLoaders.add(GameStartUp.class.getClassLoader());
 
         Async.init();
-        SerializableManager.registerAll(finalPackagePaths, finalClassLoaders); // 序列化支持
-        DBManager.registerAll(finalPackagePaths, finalClassLoaders); // db支持
-        EventEx.registerAll(finalPackagePaths, finalClassLoaders); // 事件支持
+        SerializableManager.registerAll(packagePaths, classLoaders); // 序列化支持
+        DBManager.registerAll(packagePaths, classLoaders); // db支持
+        EventEx.registerAll(packagePaths, classLoaders); // 事件支持
     }
 
     public static void enableDirectDB() {

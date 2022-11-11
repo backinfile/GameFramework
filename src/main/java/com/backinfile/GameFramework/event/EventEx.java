@@ -52,7 +52,8 @@ public class EventEx {
 
         Reflections reflections = new Reflections(
                 new MethodAnnotationsScanner(),
-                EventEx.class.getClassLoader(),
+                LogCore.class.getClassLoader(),
+                LogCore.class.getPackage().getName(),
                 packagePaths, classLoaders);
 
         listenerMap.clear();
@@ -81,6 +82,6 @@ public class EventEx {
         for (List<Listener> listeners : listenerMap.values()) {
             listeners.sort(Comparator.comparing(Listener::getPriority).reversed());
         }
-        LogCore.event.info("register over cnt:{}", listenerMap.values().stream().mapToInt(List::size).sum());
+        LogCore.event.info("register event listener over cnt:{}", listenerMap.values().stream().mapToInt(List::size).sum());
     }
 }

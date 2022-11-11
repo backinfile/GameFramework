@@ -5,7 +5,10 @@ import com.backinfile.GameFramework.db.DBEntity;
 import com.backinfile.GameFramework.db.EntityBase;
 import com.backinfile.GameFramework.serialize.*;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SerializeTest {
 
@@ -51,7 +54,7 @@ public class SerializeTest {
 
     @org.junit.jupiter.api.Test
     public void testSerializable() {
-        GameStartUp.initAll(Collections.emptyList(), Collections.singletonList(SerializeTest.class.getClassLoader()));
+        GameStartUp.initAll(SerializeTest.class);
 
 
         SerializableTestClass2 obj = new SerializableTestClass2();

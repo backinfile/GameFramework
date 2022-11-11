@@ -2,6 +2,7 @@ package com.backinfile.GameFramework.net;
 
 
 import com.backinfile.GameFramework.LogCore;
+import com.backinfile.GameFramework.db.EntityBase;
 import com.backinfile.GameFramework.serialize.ISerializable;
 import com.backinfile.GameFramework.serialize.InputStream;
 import com.backinfile.GameFramework.serialize.OutputStream;
@@ -37,13 +38,11 @@ public class GameMessage {
                 return true;
             }
         }
-        if (obj instanceof ISerializable) {
-            return true;
+        // db不能传
+        if (obj instanceof EntityBase) {
+            return false;
         }
-        if (obj.getClass().isAnnotationPresent(Serializable.class)) {
-            return true;
-        }
-        return false;
+        return obj instanceof ISerializable || obj.getClass().isAnnotationPresent(Serializable.class);
     }
 
     public static GameMessage build(byte[] bytes, int offset, int len) {
