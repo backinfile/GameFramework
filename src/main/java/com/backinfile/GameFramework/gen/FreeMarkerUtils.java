@@ -26,7 +26,7 @@ public class FreeMarkerUtils {
 
             genFileWithConfig(config, fileName, rootMap, new File(outPath, outFileName));
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new SysException(e);
         }
     }
 
