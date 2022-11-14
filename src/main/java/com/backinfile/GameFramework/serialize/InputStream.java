@@ -2,6 +2,7 @@ package com.backinfile.GameFramework.serialize;
 
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.db.EntityBase;
+import com.backinfile.GameFramework.db.EntityState;
 import com.backinfile.support.SysException;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -169,10 +170,10 @@ public class InputStream {
                     return null;
                 }
                 try {
-                    // 设置db为不可存储状态
+                    // 序列化完成的db不可进行入库操作
                     Object obj = handle.invoke(this);
                     if (obj instanceof EntityBase) {
-                        ((EntityBase) obj).setState(EntityBase.STATE_SERIALIZE);
+                        ((EntityBase) obj).setState(EntityState.STATE_SERIALIZE);
                     }
                     return obj;
                 } catch (Throwable e) {
