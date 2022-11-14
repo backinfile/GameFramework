@@ -34,8 +34,8 @@ class DBTable {
                 field.setter.invoke(result, value);
             }
         }
-        if (result instanceof EntityBase) {
-            ((EntityBase) result).setState(EntityBase.STATE_NORMAL);
+        if (result instanceof EntityBase) { // 刚从数据库中读取出来，设置状态正常
+            ((EntityBase) result).setState(EntityState.STATE_NORMAL);
         }
         return result;
     }
