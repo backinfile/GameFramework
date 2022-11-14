@@ -70,5 +70,4 @@ public abstract class Service extends Port {
             LogCore.core.error("error in invoke origin method " + method, e);
         }
     }
-
 }

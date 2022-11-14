@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * rpc终端--port
  */
-public class Terminal implements ITerminal {
+public class Terminal {
     private final Queue<Call> calls = new ConcurrentLinkedQueue<>(); // 等待执行的Call队列
     private final HashMap<Long, WaitResult> waitingResponseList = new HashMap<>(); // 等待远程返回
 
@@ -21,34 +21,41 @@ public class Terminal implements ITerminal {
     private final Port mPort;
 
     // 监听失效时间
-    public static final long CALL_EXPIRE_TIME = 30 * Time.SEC;
+    public static final long CALL_EXPIRE_TIME = 30 * Time.DAY;
 
     public Terminal(Node node, Port port) {
         this.mPort = port;
         this.mNode = node;
     }
 
-    // 此terminal接受到新call
-    @Override
+    /**
+     * 接受一个来自远程的调用
+     */
     public void addCall(Call call) {
         calls.add(call);
     }
 
-    @Override
+    /**
+     * 获取上一次执行（或正在执行）的rpc调用
+     */
     public Call getLastInCall() {
         return lastInCall;
     }
 
+    /**
+     * 获取上一次自身发起的请求的call对象
+     * （通常用于多层级rpc嵌套返回）
+     */
     public Call getLastOutCall() {
         return lastOutCall;
     }
 
     /**
+     * 发起新的rpc调用
      * 由此terminal发送新call到其他terminal，必须在port线程中发送
      */
-    @Override
-    public void sendNewCall(CallPoint to, int method, Object[] args) {
-        Call call = Call.newCall(applyId(), getLocalCallPoint(), to.copy(), method, args);
+    public void sendNewCall(long id, CallPoint to, int method, Object[] args) {
+        Call call = Call.newCall(id, getLocalCallPoint(), to.copy(), method, args);
         lastOutCall = call;
         mNode.handleCall(call);
     }
@@ -57,16 +64,17 @@ public class Terminal implements ITerminal {
         return new CallPoint(mPort.getPortId(), 0);
     }
 
-    private long applyId() {
+    public long applyId() {
         return idAllot++;
     }
 
-    @Override
+    /**
+     * rpc返回
+     */
     public void returns(Call call) {
         mNode.handleCall(call);
     }
 
-    @Override
     public void pulse() {
         executeInCall();
 
@@ -93,7 +101,9 @@ public class Terminal implements ITerminal {
         }
     }
 
-    @Override
+    /**
+     * 监听rpc调用执行结果
+     */
     public void listenOutCall(long callId, Action1<IResult> action) {
         WaitResult waitResult = waitingResponseList.get(callId);
         if (waitResult == null) {
@@ -104,7 +114,6 @@ public class Terminal implements ITerminal {
         waitResult.addCallback(action);
     }
 
-    @Override
     public void setTimeout(long callId, long timeout) {
         WaitResult waitResult = waitingResponseList.get(callId);
         if (waitResult == null) {

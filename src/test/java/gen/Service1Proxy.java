@@ -10,14 +10,24 @@ public class Service1Proxy extends ServiceProxyBase {
     public static final String TARGET_PORT_ID = Service1.class.getName();
     private static final long TARGET_OBJ_ID = 0L;
 
-    private final Port curPort;
+    private Port curPort;
 
     private Service1Proxy() {
-        this.curPort = Port.getCurrentPort();
     }
 
     public static Service1Proxy createInstance() {
-        return new Service1Proxy();
+        Service1Proxy proxy = new Service1Proxy();
+        proxy.curPort = Port.getCurrentPort();
+        return proxy;
+    }
+
+    public static Service1Proxy createInstance(boolean inMainThread) {
+        if (!inMainThread) {
+            return createInstance();
+        }
+        Service1Proxy proxy = new Service1Proxy();
+        proxy.curPort = Node.getInstance().getPort(com.backinfile.GameFramework.service.MainThreadService.class.getName());
+        return proxy;
     }
 
     private static final int METHOD_KEY_GETTESTSTRING_INT = -938218869;

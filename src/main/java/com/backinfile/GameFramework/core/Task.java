@@ -83,7 +83,12 @@ public class Task<T> extends CompletableFuture<T> {
     }
 
     public static Task<Void> run(Function0<Task<Void>> func) {
-        return func.invoke();
+        try {
+            return func.invoke();
+        } catch (Exception e) {
+            LogCore.core.error("error in Task#run", e);
+            return Task.failure(e);
+        }
     }
 
     @Override

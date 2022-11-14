@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ServiceTest {
-    public static class Service1 extends Service {
+    public static class Service3 extends Service {
         @Override
         public void init() {
 
@@ -67,7 +67,7 @@ public class ServiceTest {
 
     @SuppressWarnings("all")
     public static class Service1Proxy extends ServiceProxyBase {
-        public static final String TARGET_PORT_ID = Service1.class.getName();
+        public static final String TARGET_PORT_ID = Service3.class.getName();
         private static final long TARGET_OBJ_ID = 0L;
 
         private final Port curPort;
@@ -87,7 +87,7 @@ public class ServiceTest {
         static {
             Map<Integer, CommonFunction> methodMap = new HashMap<>();
             methodMap.put(METHOD_KEY_GET_TEST_STRING, new CommonFunction(2, (Function2) ((service, value) -> {
-                return ((Service1) service).getTestString((int) value);
+                return ((Service3) service).getTestString((int) value);
             })));
             addMethodMap(TARGET_PORT_ID, methodMap);
         }
@@ -104,7 +104,7 @@ public class ServiceTest {
 
 
         Node node = new Node();
-        node.addPort(new Service1(), new Service2());
+        node.addPort(new Service3(), new Service2());
         node.startUp();
         node.waitAllPortStartupFinish();
 //        Utils.sleep(Time.SEC * 5);

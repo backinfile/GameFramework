@@ -2,8 +2,9 @@ package com.backinfile.GameFramework.core;
 
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.serialize.SerializableManager;
+import com.backinfile.GameFramework.service.MainThreadService;
+import com.backinfile.support.Time;
 import com.backinfile.support.Utils;
-import com.backinfile.support.func.Action0;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -15,16 +16,14 @@ import java.util.concurrent.DelayQueue;
  */
 public class Node {
     private static Node instance = null;
-    public static final Thread MainThread = Thread.currentThread(); // TODO 主线程也可发送rpc
 
     private final ConcurrentLinkedQueue<Port> portsWaitForRun = new ConcurrentLinkedQueue<>();
     private final DelayQueue<Port> portsWaitForReschedule = new DelayQueue<>();
     private final ConcurrentHashMap<String, Port> allPorts = new ConcurrentHashMap<>();
     private DispatchThreads dispatchThreads;
-    private DispatchThreads mainThread;
     private static final int THREAD_NUM = 3;
-    private final ConcurrentLinkedQueue<Action0> postActionList = new ConcurrentLinkedQueue<>();
     private final String nodeId;
+    private MainThreadService mainThreadService = null;
 
     public Node() {
         this("MainNode");
@@ -48,28 +47,29 @@ public class Node {
                 null, this::dispatchRun, null);
         dispatchThreads.start();
 
-        mainThread = new DispatchThreads(("Node-" + name) + "-MainDispatchThread", 1, null, this::pulse, null);
-        mainThread.start();
-
     }
 
 
     public void abort() {
-        LogCore.core.info("node {} 中断开始.....", nodeId);
+        LogCore.core.info("=============== node {} 关闭中 ===============", nodeId);
         dispatchThreads.abort();
-        mainThread.abort();
     }
 
     public void join() {
-        while (!dispatchThreads.isAborted() || !mainThread.isAborted()) {
+        while (isAlive()) {
             Utils.sleep(100);
         }
-        LogCore.core.info("=============== node {} 关闭 ===============", nodeId);
+        LogCore.core.info("=============== node {} 已关闭 ===============", nodeId);
+    }
+
+    public boolean isAlive() {
+        return !dispatchThreads.isAborted();
     }
 
     public void waitAllPortStartupFinish() {
-        while (!allPorts.values().stream().allMatch(port -> port.startupOver)) {
-            Utils.sleep(1000);
+        Utils.sleep(Time.SEC);
+        while (!allPorts.values().stream().allMatch(Port::isStartupOver)) {
+            Utils.sleep(Time.SEC);
             LogCore.core.info("waiting all port startup...");
         }
         LogCore.core.info("all port startup finished");
@@ -80,14 +80,15 @@ public class Node {
             allPorts.put(port.getPortId(), port);
             port.setNode(this);
         }
+        for (Port port : ports) {
+            LogCore.core.info("add port {} of class {}", port.getPortId(), port.getClass().getName());
+            portsWaitForRun.add(port);
+            port.post(port::startup);
+        }
+    }
 
-        this.post(() -> {
-            for (Port port : ports) {
-                LogCore.core.info("add port {} of class {}", port.getPortId(), port.getClass().getName());
-                portsWaitForRun.add(port);
-                port.post(port::startup);
-            }
-        });
+    public void addMainThreadPort() {
+        addPort(new MainThreadService());
     }
 
     private void dispatchRun() {
@@ -98,21 +99,6 @@ public class Node {
             Utils.sleep(1);
         } else {
             pulsePort(port);
-        }
-    }
-
-    private void pulse() {
-        // pulse post action
-        while (true) {
-            Action0 action0 = postActionList.poll();
-            if (action0 == null) {
-                break;
-            }
-            try {
-                action0.invoke();
-            } catch (Exception e) {
-                LogCore.core.error("error in invoke postAction", e);
-            }
         }
     }
 
@@ -127,7 +113,7 @@ public class Node {
     }
 
     // 立即唤醒一个port
-    public void awake(Port port) {
+    void awake(Port port) {
         if (portsWaitForReschedule.remove(port)) {
             portsWaitForRun.add(port);
         }
@@ -158,7 +144,7 @@ public class Node {
      * 如果call发送至此node，直接推送到相应port中；
      * 此方法线程安全
      */
-    public void handleCall(Call call) {
+    void handleCall(Call call) {
         // 发送到此node的消息
         Port port = getPort(call.to.portID);
         if (port == null) {
@@ -168,15 +154,20 @@ public class Node {
         awake(port);
     }
 
-    /**
-     * 在node线程中执行action
-     */
-    public void post(Action0 action0) {
-        postActionList.add(action0);
-    }
-
     public String getId() {
         return nodeId;
     }
 
+    public void mainThreadUpdate() {
+        if (mainThreadService != null) {
+            mainThreadService.mainThreadUpdate();
+        } else {
+            mainThreadService = (MainThreadService) getPort(MainThreadService.class.getName());
+            if (mainThreadService != null) {
+                mainThreadService.mainThreadUpdate();
+            } else {
+                LogCore.core.error("not find mainThreadService");
+            }
+        }
+    }
 }

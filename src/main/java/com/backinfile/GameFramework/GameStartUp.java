@@ -14,6 +14,7 @@ import java.util.function.Supplier;
 
 public class GameStartUp {
     public static final String PACKAGE_PATH = "com.backinfile.GameFramework";
+    public static final Thread MainThread = Thread.currentThread();
 
     // 提供一个当前工作项目的类 进行初始化
     public static void initAll(Class<?> clazz) {
@@ -22,8 +23,7 @@ public class GameStartUp {
 
     // 进行初始化
     public static void initAll(List<String> packagePaths, List<ClassLoader> classLoaders) {
-
-        Async.init();
+        Async.init(); // 异步支持
         SerializableManager.registerAll(packagePaths, classLoaders); // 序列化支持
         DBManager.registerAll(packagePaths, classLoaders); // db支持
         EventEx.registerAll(packagePaths, classLoaders); // 事件支持
@@ -45,5 +45,16 @@ public class GameStartUp {
         node.startUp();
         node.waitAllPortStartupFinish();
         node.join();
+    }
+
+    @SafeVarargs
+    public static void startUpUsingMainThread(Supplier<Service>... suppliers) {
+        Node node = new Node();
+        node.addMainThreadPort();
+        for (Supplier<Service> supplier : suppliers) {
+            node.addPort(supplier.get());
+        }
+        node.startUp();
+        node.waitAllPortStartupFinish();
     }
 }

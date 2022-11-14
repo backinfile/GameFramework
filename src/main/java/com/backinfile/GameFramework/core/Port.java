@@ -34,7 +34,7 @@ public abstract class Port implements Delayed {
     private static final ThreadLocal<Port> curPort = new ThreadLocal<>();
     private final ConcurrentLinkedQueue<Action0> postActionList = new ConcurrentLinkedQueue<>();
 
-    private TimerQueue timerQueue = new TimerQueue(this::getTime);
+    private final TimerQueue timerQueue = new TimerQueue(this::getTime);
 
     protected boolean startupOver = false; // 初始化结束
 

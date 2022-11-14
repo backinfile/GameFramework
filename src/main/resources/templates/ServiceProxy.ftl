@@ -12,14 +12,24 @@ public class ${proxyClassName} extends ServiceProxyBase {
     public static final String TARGET_PORT_ID = ${className}.class.getName();
     private static final long TARGET_OBJ_ID = 0L;
 
-    private final Port curPort;
+    private Port curPort;
 
     private ${proxyClassName}() {
-        this.curPort = Port.getCurrentPort();
     }
 
     public static ${proxyClassName} createInstance() {
-        return new ${proxyClassName}();
+        ${proxyClassName} proxy = new ${proxyClassName}();
+        proxy.curPort = Port.getCurrentPort();
+        return proxy;
+    }
+
+    public static ${proxyClassName} createInstance(boolean inMainThread) {
+        if (!inMainThread) {
+            return createInstance();
+        }
+        ${proxyClassName} proxy = new ${proxyClassName}();
+        proxy.curPort = Node.getInstance().getPort(com.backinfile.GameFramework.service.MainThreadService.class.getName());
+        return proxy;
     }
 
 <#list methods as m>
