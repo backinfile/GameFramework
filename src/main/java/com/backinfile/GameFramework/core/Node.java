@@ -14,7 +14,7 @@ import java.util.concurrent.DelayQueue;
  * 一个程序只启一个Node
  */
 public class Node {
-    public static Node Instance = null;
+    private static Node instance = null;
     public static final Thread MainThread = Thread.currentThread(); // TODO 主线程也可发送rpc
 
     private final ConcurrentLinkedQueue<Port> portsWaitForRun = new ConcurrentLinkedQueue<>();
@@ -32,7 +32,11 @@ public class Node {
 
     public Node(String nodeId) {
         this.nodeId = nodeId;
-        Instance = this;
+        instance = this;
+    }
+
+    public static Node getInstance() {
+        return instance;
     }
 
     public void startUp() {

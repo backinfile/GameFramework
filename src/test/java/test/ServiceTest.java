@@ -48,7 +48,7 @@ public class ServiceTest {
                     String result = Async.await(proxy.getTestString(124));
                     LogCore.core.info("get result:{}", result);
                     LogCore.core.info("time:{}", getTime());
-                    Node.Instance.abort();
+                    Node.getInstance().abort();
                     return Task.completedTask();
                 });
             });
