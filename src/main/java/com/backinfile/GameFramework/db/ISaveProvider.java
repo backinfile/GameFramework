@@ -6,4 +6,8 @@ public interface ISaveProvider {
     void update(EntityBase obj);
 
     void delete(EntityBase obj);
+
+    void open();
+
+    void close();
 }

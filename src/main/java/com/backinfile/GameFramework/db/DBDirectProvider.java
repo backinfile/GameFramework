@@ -3,6 +3,10 @@ package com.backinfile.GameFramework.db;
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.support.SysException;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -13,6 +17,7 @@ import java.util.List;
 public class DBDirectProvider implements ISaveProvider, ILoadProvider {
     public static final String DB_PATH_PREFIX = "jdbc:sqlite:";
     private static final String DEFAULT_DB_FILE_NAME = "game.db";
+    private static final String DEFAULT_DB_FILE_NAME_BACKUP = "game.db.bak";
     private Connection connection = null;
     private static volatile DBDirectProvider instance = null;
 
@@ -45,10 +50,13 @@ public class DBDirectProvider implements ISaveProvider, ILoadProvider {
     private Connection getConnection() {
         if (connection == null) {
             try {
-                connection = DriverManager.getConnection(DB_PATH_PREFIX + DEFAULT_DB_FILE_NAME);
+                String url = DB_PATH_PREFIX + DEFAULT_DB_FILE_NAME;
+                connection = DriverManager.getConnection(url);
+                LogCore.db.info("新建链接 {}", url);
             } catch (Exception e) {
                 throw new SysException("创建数据库链接失败", e);
             }
+            DBManager.updateTableStruct(connection);
         }
         return connection;
     }
@@ -85,5 +93,15 @@ public class DBDirectProvider implements ISaveProvider, ILoadProvider {
 
     private <T extends EntityBase> DBTable findDBTable(Class<T> clazz) {
         return DBManager.tableMap.get(clazz);
+    }
+
+    public void backup(String path) {
+        try {
+            Path target = Paths.get(path, DEFAULT_DB_FILE_NAME_BACKUP);
+            Files.copy(Paths.get(DEFAULT_DB_FILE_NAME), target, StandardCopyOption.REPLACE_EXISTING);
+            LogCore.db.info("backupDatabase success path:{}", target.toAbsolutePath());
+        } catch (Exception e) {
+            LogCore.db.error("backupDatabase error", e);
+        }
     }
 }

@@ -4,10 +4,8 @@ import com.backinfile.GameFramework.GameStartUp;
 import com.backinfile.GameFramework.db.DBDirectProvider;
 import com.backinfile.GameFramework.db.DBEntity;
 import com.backinfile.GameFramework.db.EntityBase;
+import com.backinfile.GameFramework.db.ILoadProvider;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
-
-import java.sql.SQLException;
 
 public class DBTest {
 
@@ -17,6 +15,7 @@ public class DBTest {
         public long playerId;
         public int value;
         public int value2;
+        public int value3;
     }
 
     @RepeatedTest(3)
@@ -24,7 +23,7 @@ public class DBTest {
         GameStartUp.initAll(DBTest.class);
         GameStartUp.enableDirectDB();
 
-        DBDirectProvider loadProvider = DBDirectProvider.getInstance();
+        ILoadProvider loadProvider = DBDirectProvider.getInstance();
         for (TestDB db : loadProvider.queryAll(TestDB.class)) {
             db.remove();
         }
@@ -39,27 +38,37 @@ public class DBTest {
         loadProvider.close();
     }
 
+    @RepeatedTest(2)
+    public void updateTest() {
+        GameStartUp.initAll(DBTest.class);
+        GameStartUp.enableDirectDB();
 
-    @Test
-    public void test() throws SQLException {
-//        GameStartUp.initAll(DBTest.class);
-//
-////        DBManager.registerAll(DBTest.class.getClassLoader());
-//        Connection connection = DriverManager.getConnection("jdbc:sqlite:D:/game.db");
-//        DBManager.updateTableStruct(connection);
-//
-//        TestDB testDB = new TestDB();
-//        testDB.id = 4;
-//        testDB.name = "2q32";
-//        testDB.value = 123;
-//        testDB.value2 = 2453;
-//        testDB.playerId = 1243;
-//
-//        DBManager.insert(connection, testDB);
-////        DBManager.delete(connection, "test", 1);
-//
-//        List<Object> test = DBManager.queryAll(connection, "test", 1243);
-//
-//        connection.close();
+        ILoadProvider loadProvider = DBDirectProvider.getInstance();
+        for (TestDB db : loadProvider.queryAll(TestDB.class)) {
+            db.remove();
+        }
+
+        long id = 124233L;
+        {
+            TestDB db = new TestDB();
+            db.id = id;
+            db.playerId = 90001;
+            db.name = "bob";
+            db.save();
+        }
+
+        TestDB db = loadProvider.querySingle(TestDB.class, id);
+        db.name = "will";
+        db.save();
+
+        assert loadProvider.querySingle(TestDB.class, db.id).name.equals(db.name);
+        loadProvider.close();
+    }
+
+    public static void main(String[] args) {
+        GameStartUp.initAll(DBTest.class);
+        GameStartUp.enableDirectDB();
+        DBDirectProvider.getInstance().backup("D:");
+        DBDirectProvider.getInstance().close();
     }
 }

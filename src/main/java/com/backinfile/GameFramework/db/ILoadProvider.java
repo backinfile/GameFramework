@@ -9,4 +9,8 @@ public interface ILoadProvider {
     <T extends EntityBase> List<T> queryAll(Class<T> clazz);
 
     <T extends EntityBase> List<T> queryAllByPlayerId(Class<T> clazz, long playerId);
+
+    void open();
+
+    void close();
 }
