@@ -6,6 +6,7 @@ import com.backinfile.GameFramework.core.Service;
 import com.backinfile.GameFramework.core.Task;
 import com.backinfile.GameFramework.gen.GenTools;
 import com.backinfile.GameFramework.serialize.Serializable;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,8 +50,15 @@ public class GenProxyTest {
     }
 
 
-    public static void main(String[] args) {
+    @Test
+    public void test() {
         String genPath = "/src/test/java/gen";
-        GenTools.genServiceProxy(Service1.class, "gen", GenTools.getAbsolutePath(genPath));
+        GenTools.genServiceProxy(Service1.class, "gen", GenTools.getAbsolutePath(genPath), true);
+    }
+
+    @Test
+    public void testGenAll() {
+        String genPath = GenTools.getAbsolutePath("/src/test/java/gen");
+        GenTools.genAllServiceProxy(GenProxyTest.class, "gen", genPath, true, true);
     }
 }

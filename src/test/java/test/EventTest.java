@@ -66,7 +66,7 @@ public class EventTest {
     private static boolean asyncEventCatch = false;
     private static boolean asyncEventCatch2 = false;
 
-    private static class TestService extends Service {
+    public static class TestService extends Service {
         @Override
         public void init() {
         }
@@ -82,7 +82,7 @@ public class EventTest {
         }
     }
 
-    private static class Test2Service extends Service {
+    public static class Test2Service extends Service {
         @Override
         public void init() {
             post(() -> {

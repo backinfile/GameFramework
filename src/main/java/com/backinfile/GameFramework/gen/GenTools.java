@@ -4,6 +4,9 @@ import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.core.RPCMethod;
 import com.backinfile.GameFramework.core.Service;
 import com.backinfile.GameFramework.core.Task;
+import com.backinfile.support.SysException;
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -18,11 +21,39 @@ import java.util.*;
 public class GenTools {
     private static final String SERVICE_PROXY_PREFIX = "Proxy";
 
-    public static String getAbsolutePath(String path) {
-        return new File(System.getProperty("user.dir"), path).getAbsolutePath();
+    public static String getAbsolutePath(String pathInProj) {
+        return new File(System.getProperty("user.dir"), pathInProj).getAbsolutePath();
     }
 
-    public static boolean genServiceProxy(Class<? extends Service> serviceClass, String packageName, String targetPath) {
+    public static void genAllServiceProxy(Class<?> projClass, String targetPackageName, String targetPath, boolean clearDir, boolean loadProxyClass) {
+        Reflections reflections = new Reflections(
+                new SubTypesScanner(false),
+                projClass.getClassLoader(),
+                projClass.getPackage().getName());
+
+        if (clearDir) {
+            File file = new File(targetPath);
+            if (file.exists() && file.isDirectory()) {
+                LogCore.gen.info("clear dir {}", file.getAbsolutePath());
+                if (file.delete()) {
+                    LogCore.gen.info("clear dir {}", file.getAbsolutePath());
+                } else {
+                    LogCore.gen.error("clear dir error {}", file.getAbsolutePath());
+                }
+            }
+        }
+
+        for (Class<? extends Service> clazz : reflections.getSubTypesOf(Service.class)) {
+            if (Modifier.isAbstract(clazz.getModifiers())) {
+                continue;
+            }
+            if (!genServiceProxy(clazz, targetPackageName, targetPath, loadProxyClass)) {
+                throw new SysException("gen proxy file failed");
+            }
+        }
+    }
+
+    public static boolean genServiceProxy(Class<? extends Service> serviceClass, String packageName, String targetPath, boolean loadProxyClass) {
         String className = serviceClass.getSimpleName();
         String proxyClassName = serviceClass.getSimpleName() + SERVICE_PROXY_PREFIX;
 
@@ -77,6 +108,16 @@ public class GenTools {
         } catch (Exception e) {
             LogCore.gen.error("gen proxy file error " + serviceClass.getName(), e);
             return false;
+        }
+
+        if (loadProxyClass) {
+            try {
+                String fullProxyClassName = packageName + "." + proxyClassName;
+                Class.forName(fullProxyClassName);
+                LogCore.gen.info("load class success " + fullProxyClassName);
+            } catch (Exception e) {
+                LogCore.gen.error("", e);
+            }
         }
         return true;
     }

@@ -21,7 +21,7 @@ public class DBTest {
     @RepeatedTest(3)
     public void testDB() {
         GameStartUp.initAll(DBTest.class);
-        GameStartUp.enableDirectDB();
+        GameStartUp.enableDirectDB("");
 
         ILoadProvider loadProvider = DBDirectProvider.getInstance();
         for (TestDB db : loadProvider.queryAll(TestDB.class)) {
@@ -41,7 +41,7 @@ public class DBTest {
     @RepeatedTest(2)
     public void updateTest() {
         GameStartUp.initAll(DBTest.class);
-        GameStartUp.enableDirectDB();
+        GameStartUp.enableDirectDB("");
 
         ILoadProvider loadProvider = DBDirectProvider.getInstance();
         for (TestDB db : loadProvider.queryAll(TestDB.class)) {
@@ -67,7 +67,7 @@ public class DBTest {
 
     public static void main(String[] args) {
         GameStartUp.initAll(DBTest.class);
-        GameStartUp.enableDirectDB();
+        GameStartUp.enableDirectDB("");
         DBDirectProvider.getInstance().backup("D:");
         DBDirectProvider.getInstance().close();
     }
