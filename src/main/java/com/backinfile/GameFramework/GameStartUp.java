@@ -29,9 +29,9 @@ public class GameStartUp {
         EventEx.registerAll(packagePaths, classLoaders); // 事件支持
     }
 
-    public static void enableDirectDB() {
+    public static void enableDirectDB(String path) {
         DBManager.enableSqlLog(true);
-        DBDirectProvider dbDirectProvider = DBDirectProvider.getInstance();
+        DBDirectProvider dbDirectProvider = DBDirectProvider.createInstance(path);
         DBManager.setSaveProvider(dbDirectProvider);
         dbDirectProvider.open();
     }

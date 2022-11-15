@@ -2,6 +2,7 @@ package com.backinfile.GameFramework.db;
 
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.support.SysException;
+import com.backinfile.support.Utils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,18 +18,25 @@ import java.util.List;
 public class DBDirectProvider implements ISaveProvider, ILoadProvider {
     public static final String DB_PATH_PREFIX = "jdbc:sqlite:";
     private static final String DEFAULT_DB_FILE_NAME = "game.db";
-    private static final String DEFAULT_DB_FILE_NAME_BACKUP = "game.db.bak";
+    private static final String BACKUP_SUFFIX = ".bak";
     private Connection connection = null;
     private static volatile DBDirectProvider instance = null;
+    private String path;
 
     public static DBDirectProvider getInstance() {
-        if (instance == null) {
-            instance = new DBDirectProvider();
-        }
         return instance;
     }
 
-    private DBDirectProvider() {
+    public static DBDirectProvider createInstance(String path) {
+        if (instance != null) {
+            throw new SysException("");
+        }
+        instance = new DBDirectProvider(path);
+        return instance;
+    }
+
+    private DBDirectProvider(String path) {
+        this.path = Utils.isNullOrEmpty(path) ? DEFAULT_DB_FILE_NAME : path;
     }
 
     @Override
@@ -50,7 +58,7 @@ public class DBDirectProvider implements ISaveProvider, ILoadProvider {
     private Connection getConnection() {
         if (connection == null) {
             try {
-                String url = DB_PATH_PREFIX + DEFAULT_DB_FILE_NAME;
+                String url = DB_PATH_PREFIX + path;
                 connection = DriverManager.getConnection(url);
                 LogCore.db.info("新建链接 {}", url);
             } catch (Exception e) {
@@ -97,8 +105,8 @@ public class DBDirectProvider implements ISaveProvider, ILoadProvider {
 
     public void backup(String path) {
         try {
-            Path target = Paths.get(path, DEFAULT_DB_FILE_NAME_BACKUP);
-            Files.copy(Paths.get(DEFAULT_DB_FILE_NAME), target, StandardCopyOption.REPLACE_EXISTING);
+            Path target = Paths.get(path, this.path, BACKUP_SUFFIX);
+            Files.copy(Paths.get(this.path), target, StandardCopyOption.REPLACE_EXISTING);
             LogCore.db.info("backupDatabase success path:{}", target.toAbsolutePath());
         } catch (Exception e) {
             LogCore.db.error("backupDatabase error", e);
