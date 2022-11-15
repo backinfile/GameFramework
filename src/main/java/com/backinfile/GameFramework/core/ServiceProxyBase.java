@@ -22,7 +22,6 @@ public abstract class ServiceProxyBase {
 
     @SuppressWarnings("all")
     // 推送请求
-    // TODO 主线程也可发送
     protected static Task request(Port port, String targetPort, long targetObjId, int methodKey, Object... args) {
         if (port == null) {
             return Task.failure(new SysException("rpc not request from a port!"));
