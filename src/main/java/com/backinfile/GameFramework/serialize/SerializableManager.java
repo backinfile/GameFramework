@@ -81,7 +81,7 @@ public class SerializableManager {
         int interCnt = 0;
         int autoCnt = 0;
 
-        // 接口方式
+        // 优先使用接口方式（DBEntity除外，DBEntity使用自动挂载方式）
         for (Class<?> clazz : reflections.getSubTypesOf(ISerializable.class)) {
             if (Modifier.isAbstract(clazz.getModifiers()) || Modifier.isInterface(clazz.getModifiers())) {
                 continue;
@@ -203,7 +203,7 @@ public class SerializableManager {
                 objectUnpackerMap.put(getCommonSerializeID(clazz), value);
                 cnt++;
             } catch (Throwable e) {
-//                Log.serialize.error("registerAllEnum error: " + clazz.getName());
+                LogCore.serialize.error("registerEnum error: " + clazz.getName());
             }
         }
         LogCore.serialize.info("register enum over cnt:{}", cnt);

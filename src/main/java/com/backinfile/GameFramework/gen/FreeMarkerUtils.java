@@ -60,7 +60,7 @@ public class FreeMarkerUtils {
             Template template = config.getTemplate(fileName, "UTF-8");
             template.process(rootMap, writer);
         }
-        LogCore.gen.info("gen {} success", file.getAbsolutePath());
+        LogCore.gen.info("gen success {} ", file.getAbsolutePath());
     }
 
 

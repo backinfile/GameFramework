@@ -67,7 +67,6 @@ public class Node {
     }
 
     public void waitAllPortStartupFinish() {
-        Utils.sleep(Time.SEC);
         while (!allPorts.values().stream().allMatch(Port::isStartupOver)) {
             Utils.sleep(Time.SEC);
             LogCore.core.info("waiting all port startup...");

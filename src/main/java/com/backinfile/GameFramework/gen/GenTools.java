@@ -34,11 +34,16 @@ public class GenTools {
         if (clearDir) {
             File file = new File(targetPath);
             if (file.exists() && file.isDirectory()) {
-                LogCore.gen.info("clear dir {}", file.getAbsolutePath());
-                if (file.delete()) {
+                File[] listFiles = file.listFiles();
+                if (listFiles != null) {
                     LogCore.gen.info("clear dir {}", file.getAbsolutePath());
-                } else {
-                    LogCore.gen.error("clear dir error {}", file.getAbsolutePath());
+                    for (File subFile : listFiles) {
+                        if (subFile.isFile()) {
+                            if (!subFile.delete()) {
+                                LogCore.gen.error("clear file error {}", subFile.getAbsolutePath());
+                            }
+                        }
+                    }
                 }
             }
         }

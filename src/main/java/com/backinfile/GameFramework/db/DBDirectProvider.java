@@ -81,6 +81,7 @@ public class DBDirectProvider implements ISaveProvider, ILoadProvider {
                 LogCore.db.error("关闭数据库链接时发生错误", e);
             }
             connection = null;
+            DBDirectProvider.instance = null;
         }
     }
 
