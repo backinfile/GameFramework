@@ -15,7 +15,7 @@ public class MainThreadTest {
     @Test
     public void test() {
         GameStartUp.initAll(MainThreadTest.class);
-        GameStartUp.startUpUsingMainThread(GenProxyTest.Service1::new);
+        GameStartUp.startUpUsingMainThread(new GenProxyTest.Service1());
 
         Node node = Node.getInstance();
         while (node.isAlive()) {

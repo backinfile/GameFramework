@@ -102,10 +102,11 @@ public class EventTest {
         }
     }
 
+    // 能顺利退出即可
     @Test
     public void testAsyncEvent() {
         GameStartUp.initAll(EventTest.class);
-        GameStartUp.startUp(TestService::new, Test2Service::new);
+        GameStartUp.startUp(new Test2Service(), new Test2Service());
 
         assert asyncEventCatch;
         assert asyncEventCatch2;

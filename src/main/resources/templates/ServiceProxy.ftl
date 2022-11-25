@@ -9,8 +9,8 @@ import java.util.*;
 
 @SuppressWarnings("all")
 public class ${proxyClassName} extends ServiceProxyBase {
-    public static final String TARGET_PORT_ID = ${className}.class.getName();
-    private static final long TARGET_OBJ_ID = 0L;
+    public static final String TARGET_PORT_ID = ${modMainClass}.class.getName();
+    private static final int TARGET_MOD_ID = ${modId};
 
     private Port curPort;
 
@@ -43,7 +43,7 @@ public class ${proxyClassName} extends ServiceProxyBase {
             return ((${className}) _service).${m.name}(${m.parameterTypeNameCasts});
         })));
 </#list>
-        addMethodMap(TARGET_PORT_ID, methodMap);
+        addMethodMap(TARGET_PORT_ID, TARGET_MOD_ID, methodMap);
     }
 
 <#list methods as m>
@@ -51,7 +51,7 @@ public class ${proxyClassName} extends ServiceProxyBase {
      * {@link ${className}#${m.name}(${m.parameterTypeNames})}
      */
     public ${m.returnType} ${m.name}(${m.parameterTypeNames}) {
-        return request(curPort, TARGET_PORT_ID, TARGET_OBJ_ID, ${m.STR}${m.parameterNames});
+        return request(curPort, TARGET_PORT_ID, TARGET_MOD_ID, ${m.STR}${m.parameterNames});
     }
 
 </#list>

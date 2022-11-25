@@ -64,9 +64,12 @@ public class ServiceTest {
         }
     }
 
+
+    // 能顺利退出即可
     @Test
     public void test() {
         GameStartUp.initAll(ServiceTest.class);
-        GameStartUp.startUp(Service2::new, Service3::new);
+        GameStartUp.startUp(new Service2(), new Service3());
+        assert true;
     }
 }

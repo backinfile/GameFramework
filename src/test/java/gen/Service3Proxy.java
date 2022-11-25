@@ -8,7 +8,7 @@ import java.util.*;
 @SuppressWarnings("all")
 public class Service3Proxy extends ServiceProxyBase {
     public static final String TARGET_PORT_ID = Service3.class.getName();
-    private static final long TARGET_OBJ_ID = 0L;
+    private static final int TARGET_MOD_ID = 0;
 
     private Port curPort;
 
@@ -37,14 +37,14 @@ public class Service3Proxy extends ServiceProxyBase {
         methodMap.put(METHOD_KEY_GETTESTSTRING_INT, new CommonFunction(2, (Function2) ((_service, value) -> {
             return ((Service3) _service).getTestString((int) value);
         })));
-        addMethodMap(TARGET_PORT_ID, methodMap);
+        addMethodMap(TARGET_PORT_ID, TARGET_MOD_ID, methodMap);
     }
 
     /**
      * {@link Service3#getTestString(int value)}
      */
     public com.backinfile.GameFramework.core.Task<java.lang.String> getTestString(int value) {
-        return request(curPort, TARGET_PORT_ID, TARGET_OBJ_ID, METHOD_KEY_GETTESTSTRING_INT, value);
+        return request(curPort, TARGET_PORT_ID, TARGET_MOD_ID, METHOD_KEY_GETTESTSTRING_INT, value);
     }
 
 }

@@ -3,6 +3,7 @@ package com.backinfile.GameFramework.gen;
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.core.RPCMethod;
 import com.backinfile.GameFramework.core.Service;
+import com.backinfile.GameFramework.core.ServiceMod;
 import com.backinfile.GameFramework.core.Task;
 import com.backinfile.support.SysException;
 import org.reflections.Reflections;
@@ -12,6 +13,7 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 
 /**
@@ -26,11 +28,6 @@ public class GenTools {
     }
 
     public static void genAllServiceProxy(Class<?> projClass, String targetPackageName, String targetPath, boolean clearDir) {
-        Reflections reflections = new Reflections(
-                new SubTypesScanner(false),
-                projClass.getClassLoader(),
-                projClass.getPackage().getName());
-
         if (clearDir) {
             File file = new File(targetPath);
             if (file.exists() && file.isDirectory()) {
@@ -48,17 +45,64 @@ public class GenTools {
             }
         }
 
-        for (Class<? extends Service> clazz : reflections.getSubTypesOf(Service.class)) {
-            if (Modifier.isAbstract(clazz.getModifiers())) {
-                continue;
-            }
-            if (!genServiceProxy(clazz, targetPackageName, targetPath)) {
+        Map<Class<?>, ServiceGenInfo> allService = findAllService(projClass);
+        for (ServiceGenInfo info : allService.values()) {
+            if (!genServiceProxy(info.serviceClass, targetPackageName, targetPath, false, null)) {
                 throw new SysException("gen proxy file failed");
+            }
+            for (Class<?> modClass : info.serviceModClass) {
+                if (!genServiceProxy(modClass, targetPackageName, targetPath, true, info.serviceClass)) {
+                    throw new SysException("gen proxy file failed");
+                }
             }
         }
     }
 
-    public static boolean genServiceProxy(Class<? extends Service> serviceClass, String packageName, String targetPath) {
+    public static Map<Class<?>, ServiceGenInfo> findAllService(Class<?> projClass) {
+        Map<Class<?>, ServiceGenInfo> resultMap = new HashMap<>();
+
+        Reflections reflections = new Reflections(
+                new SubTypesScanner(false),
+                projClass.getClassLoader(),
+                projClass.getPackage().getName());
+
+        for (Class<?> clazz : reflections.getSubTypesOf(Service.class)) {
+            if (Modifier.isAbstract(clazz.getModifiers())) {
+                continue;
+            }
+            ServiceGenInfo info = new ServiceGenInfo();
+            info.serviceClass = clazz;
+            resultMap.put(info.serviceClass, info);
+        }
+        for (Class<?> clazz : reflections.getSubTypesOf(ServiceMod.class)) {
+            if (Modifier.isAbstract(clazz.getModifiers())) {
+                continue;
+            }
+            Class<?> superGenericType = getSuperGenericType(clazz);
+            if (superGenericType == null) {
+                LogCore.gen.error("not find super generic type of" + clazz.getName());
+                continue;
+            }
+            ServiceGenInfo serviceGenInfo = resultMap.get(superGenericType);
+            if (serviceGenInfo != null) {
+                serviceGenInfo.serviceModClass.add(clazz);
+            } else {
+                LogCore.gen.error("not find service of" + clazz.getName());
+            }
+        }
+        return resultMap;
+    }
+
+    private static Class<?> getSuperGenericType(Class<?> clazz) {
+        try {
+            return (Class<?>) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
+    public static boolean genServiceProxy(Class<?> serviceClass, String packageName, String targetPath, boolean asMod, Class<?> superGenericType) {
         String className = serviceClass.getSimpleName();
         String proxyClassName = serviceClass.getSimpleName() + SERVICE_PROXY_PREFIX;
 
@@ -71,6 +115,16 @@ public class GenTools {
         rootMap.put("packageName", packageName);
         rootMap.put("methods", methods);
         rootMap.put("imports", imports);
+
+        if (asMod) {
+            rootMap.put("modId", serviceClass.getSimpleName() + ".class.getName().hashCode()");
+            rootMap.put("modMainClass", superGenericType.getSimpleName());
+            imports.add(superGenericType.getCanonicalName());
+        } else {
+            rootMap.put("modId", String.valueOf(0));
+            rootMap.put("modMainClass", serviceClass.getSimpleName());
+        }
+
 
         imports.add(serviceClass.getCanonicalName());
 

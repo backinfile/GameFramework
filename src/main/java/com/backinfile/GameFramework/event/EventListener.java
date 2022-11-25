@@ -1,5 +1,8 @@
 package com.backinfile.GameFramework.event;
 
+import com.backinfile.GameFramework.core.Service;
+import com.backinfile.GameFramework.service.DisableAsyncEventService;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -19,5 +22,5 @@ public @interface EventListener {
 
     int priority() default 1000; // 大的先执行
 
-    Class<?> async() default void.class; // 异步触发事件 触发时发生在那个Service
+    Class<? extends Service> async() default DisableAsyncEventService.class; // 异步触发事件 触发时发生在那个Service
 }

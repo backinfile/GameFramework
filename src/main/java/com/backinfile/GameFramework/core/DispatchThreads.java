@@ -46,7 +46,7 @@ public class DispatchThreads {
             thread.setDaemon(true);
             threads.add(thread);
             thread.start();
-            LogCore.core.info("Thread {} start", thread.getName());
+            LogCore.core.info("Thread start {}", thread.getName());
         }
     }
 

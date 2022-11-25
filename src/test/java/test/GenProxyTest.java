@@ -53,7 +53,7 @@ public class GenProxyTest {
     @Test
     public void test() {
         String genPath = "/src/test/java/gen";
-        GenTools.genServiceProxy(Service1.class, "gen", GenTools.getAbsolutePath(genPath));
+        GenTools.genServiceProxy(Service1.class, "gen", GenTools.getAbsolutePath(genPath), false, null);
     }
 
     @Test

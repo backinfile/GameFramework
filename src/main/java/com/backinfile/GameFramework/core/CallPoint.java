@@ -5,18 +5,18 @@ import com.backinfile.GameFramework.serialize.Serializable;
 @Serializable
 public class CallPoint {
     public String portID;
-    public long objId;
+    public int modId;
 
     public CallPoint() {
     }
 
-    public CallPoint(String portID, long objId) {
+    public CallPoint(String portID, int modId) {
         this.portID = portID;
-        this.objId = objId;
+        this.modId = modId;
     }
 
     public CallPoint copy() {
-        return new CallPoint(portID, objId);
+        return new CallPoint(portID, modId);
     }
 
 
@@ -24,7 +24,7 @@ public class CallPoint {
     public String toString() {
         return "CallPoint{" +
                 "portID='" + portID + '\'' +
-                ", objId=" + objId +
+                ", modId=" + modId +
                 '}';
     }
 }

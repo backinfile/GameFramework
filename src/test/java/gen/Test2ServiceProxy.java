@@ -8,7 +8,7 @@ import java.util.*;
 @SuppressWarnings("all")
 public class Test2ServiceProxy extends ServiceProxyBase {
     public static final String TARGET_PORT_ID = Test2Service.class.getName();
-    private static final long TARGET_OBJ_ID = 0L;
+    private static final int TARGET_MOD_ID = 0;
 
     private Port curPort;
 
@@ -33,7 +33,7 @@ public class Test2ServiceProxy extends ServiceProxyBase {
 
     static {
         Map<Integer, CommonFunction> methodMap = new HashMap<>();
-        addMethodMap(TARGET_PORT_ID, methodMap);
+        addMethodMap(TARGET_PORT_ID, TARGET_MOD_ID, methodMap);
     }
 
 }

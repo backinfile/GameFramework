@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * 可以使用 {@link Node#addMainThreadPort()} 添加到Node上
  * 在主线程发起rpc时, 使用Service1Proxy.createInstance(true)由本service代发
  */
-public class MainThreadService extends Service {
+public final class MainThreadService extends Service {
     private final Queue<Task<Void>> waitingTasks = new ConcurrentLinkedQueue<>();
 
     @Override

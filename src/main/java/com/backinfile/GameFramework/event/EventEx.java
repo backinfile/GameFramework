@@ -3,7 +3,7 @@ package com.backinfile.GameFramework.event;
 import com.backinfile.GameFramework.LogCore;
 import com.backinfile.GameFramework.core.Node;
 import com.backinfile.GameFramework.core.Port;
-import com.backinfile.GameFramework.core.Service;
+import com.backinfile.GameFramework.service.DisableAsyncEventService;
 import com.backinfile.support.Utils;
 import org.reflections.Reflections;
 import org.reflections.scanners.MethodAnnotationsScanner;
@@ -123,14 +123,7 @@ public class EventEx {
         EventListener annotation = method.getAnnotation(EventListener.class);
         int priority = annotation.priority();
 
-        if (annotation.async() != void.class) {
-            if (!Service.class.isAssignableFrom(annotation.async())) {
-                LogCore.event.warn("register {}#{} failed asyncEvent param", method.getDeclaringClass().getName(), method.getName());
-                return;
-            }
-        }
-
-        String targetService = annotation.async() == void.class ? "" : annotation.async().getName();
+        String targetService = annotation.async() == DisableAsyncEventService.class ? "" : annotation.async().getName();
 
         try {
             MethodType mt = MethodType.methodType(void.class, eventClass);

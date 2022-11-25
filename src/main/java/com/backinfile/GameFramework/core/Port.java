@@ -47,6 +47,7 @@ public abstract class Port implements Delayed {
 
     public void startup() {
         startupOver = true;
+        LogCore.core.info("port init over {}", getClass().getName());
     }
 
     public void pulsePort() {

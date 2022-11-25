@@ -4,25 +4,28 @@ import com.backinfile.GameFramework.service.MainThreadService;
 import com.backinfile.support.SysException;
 import com.backinfile.support.func.CommonFunction;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class ServiceProxyBase {
-    private static final Map<String, Map<Integer, CommonFunction>> serviceMethodMap = new ConcurrentHashMap<>();
+    private static final Map<Integer, Map<Integer, Map<Integer, CommonFunction>>> serviceMethodMap = new ConcurrentHashMap<>();
 
-    protected static void addMethodMap(String name, Map<Integer, CommonFunction> methodMap) {
-        serviceMethodMap.put(name, Collections.unmodifiableMap(methodMap));
+    protected static void addMethodMap(String name, int modId, Map<Integer, CommonFunction> methodMap) {
+        Map<Integer, Map<Integer, CommonFunction>> service = serviceMethodMap.computeIfAbsent(name.hashCode(), key -> new HashMap<>());
+        service.put(modId, methodMap);
     }
 
-    public static Map<Integer, CommonFunction> getMethodMap(Service service) {
-        return serviceMethodMap.get(service.getClass().getName());
+    public static Map<Integer, CommonFunction> getMethodMap(Service service, int modId) {
+        int serviceCode = service.getClass().getName().hashCode();
+        Map<Integer, Map<Integer, CommonFunction>> m = serviceMethodMap.computeIfAbsent(serviceCode, key -> new HashMap<>());
+        return m.get(modId);
     }
 
 
     @SuppressWarnings("all")
     // 推送请求
-    protected static Task request(Port port, String targetPort, long targetObjId, int methodKey, Object... args) {
+    protected static Task request(Port port, String targetPort, int targetObjId, int methodKey, Object... args) {
         if (port == null) {
             return Task.failure(new SysException("rpc not request from a port!"));
         }
