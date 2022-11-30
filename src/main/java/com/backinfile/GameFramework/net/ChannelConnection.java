@@ -9,6 +9,8 @@ public class ChannelConnection implements IConnection {
     private final Channel channel;
     private final ConcurrentLinkedQueue<byte[]> inputList = new ConcurrentLinkedQueue<>();
 
+    private volatile long playerId;
+
 
     public ChannelConnection(long id, Channel channel) {
         this.channel = channel;
@@ -59,4 +61,12 @@ public class ChannelConnection implements IConnection {
         channel.close();
     }
 
+
+    public long getPlayerId() {
+        return playerId;
+    }
+
+    public void setPlayerId(long playerId) {
+        this.playerId = playerId;
+    }
 }
