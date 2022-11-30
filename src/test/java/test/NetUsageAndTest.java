@@ -1,47 +1,62 @@
 package test;
 
 
-import com.backinfile.GameFramework.net.Client;
-import com.backinfile.GameFramework.net.GameMessage;
-import com.backinfile.GameFramework.net.Server;
+import com.backinfile.GameFramework.net.*;
 import com.backinfile.support.Utils;
-import io.netty.channel.ChannelHandlerContext;
 
 import java.io.IOException;
 
 public class NetUsageAndTest {
 
-    public static class EchoServerHandler extends Server.ServerHandler {
+    public static class EchoServerHandler implements INetHandler {
         @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) {
-            super.channelRead(ctx, msg);
+        public void onActive(ChannelConnection connection) {
 
-            GameMessage gameMessage = getConnection().pollGameMessage();
+        }
+
+        @Override
+        public void onInactive(ChannelConnection connection) {
+
+        }
+
+        @Override
+        public void onRead(ChannelConnection connection) {
+            GameMessage gameMessage = connection.pollGameMessage();
             System.out.println("read " + gameMessage.getMessage());
-            getConnection().sendGameMessage(gameMessage);
+            connection.sendGameMessage(gameMessage);
+        }
+
+        @Override
+        public void onException(ChannelConnection connection, Throwable cause) {
+
         }
     }
 
-    public static class HelloClientHandler extends Client.ClientHandler {
-        public HelloClientHandler(Client client) {
-            super(client);
+    public static class HelloClientHandler implements INetHandler {
+
+        @Override
+        public void onActive(ChannelConnection connection) {
+
+            connection.sendGameMessage(GameMessage.build("hello"));
         }
 
         @Override
-        public void channelActive(ChannelHandlerContext ctx) {
-            super.channelActive(ctx);
+        public void onInactive(ChannelConnection connection) {
 
-            getConnection().sendGameMessage(GameMessage.build("hello"));
         }
 
         @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) {
-            super.channelRead(ctx, msg);
+        public void onRead(ChannelConnection connection) {
 
-            GameMessage gameMessage = getConnection().pollGameMessage();
+            GameMessage gameMessage = connection.pollGameMessage();
             System.out.println("read " + gameMessage.getMessage());
 
-//            getConnection().close();
+            connection.close();
+        }
+
+        @Override
+        public void onException(ChannelConnection connection, Throwable cause) {
+
         }
     }
 }
@@ -49,7 +64,7 @@ public class NetUsageAndTest {
 class TestClient {
     public static void main(String[] args) throws IOException {
         GameMessage.setEnableStringType(true);
-        Client client = new Client(NetUsageAndTest.HelloClientHandler::new, "", 10088);
+        Client client = new Client(new NetUsageAndTest.HelloClientHandler(), "", 10088);
         client.start();
         Utils.readExit();
         client.stopClient();
@@ -59,7 +74,7 @@ class TestClient {
 class TestServer {
     public static void main(String[] args) {
         GameMessage.setEnableStringType(true);
-        Server server = new Server(NetUsageAndTest.EchoServerHandler::new, 10088);
+        Server server = new Server(new NetUsageAndTest.EchoServerHandler(), 10088);
         server.start();
         Utils.readExit();
         server.stopServer();

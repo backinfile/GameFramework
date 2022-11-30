@@ -10,17 +10,16 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.Function;
 
 public class Client extends Thread {
     public static Channel Channel = null;
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final String host;
     private final int port;
-    private final Function<Client, ClientHandler> handlerSupplier;
+    private final INetHandler netHandler;
 
-    public Client(Function<Client, ClientHandler> handlerSupplier, String host, int port) {
-        this.handlerSupplier = handlerSupplier != null ? handlerSupplier : ClientHandler::new;
+    public Client(INetHandler netHandler, String host, int port) {
+        this.netHandler = netHandler;
         this.host = Utils.isNullOrEmpty(host) ? "127.0.0.1" : host;
         this.port = port;
     }
@@ -54,7 +53,7 @@ public class Client extends Thread {
                 @Override
                 protected void initChannel(SocketChannel socketChannel) {
                     ChannelPipeline pipeline = socketChannel.pipeline();
-                    pipeline.addLast(new Decoder(), new Encoder(), handlerSupplier.apply(Client.this));
+                    pipeline.addLast(new Decoder(), new Encoder(), new ClientHandler(Client.this, netHandler));
                 }
             });
 
@@ -74,12 +73,14 @@ public class Client extends Thread {
         countDownLatch.countDown();
     }
 
-    public static class ClientHandler extends ChannelInboundHandlerAdapter {
+    private static final class ClientHandler extends ChannelInboundHandlerAdapter {
         private final Client client;
         private ChannelConnection connection = null;
+        private final INetHandler netHandler;
 
-        public ClientHandler(Client client) {
+        public ClientHandler(Client client, INetHandler netHandler) {
             this.client = client;
+            this.netHandler = netHandler;
         }
 
 
@@ -88,6 +89,10 @@ public class Client extends Thread {
             Channel channel = ctx.channel();
             connection = new ChannelConnection(0, channel);
             LogCore.client.info("channelActive address:{} id:{}", channel.remoteAddress(), connection.getId());
+
+            if (netHandler != null) {
+                netHandler.onActive(connection);
+            }
         }
 
         @Override
@@ -95,11 +100,19 @@ public class Client extends Thread {
             Channel channel = ctx.channel();
             LogCore.client.info("channelInactive address:{} id:{}", channel.remoteAddress(), connection.getId());
             client.stopClient();
+
+            if (netHandler != null) {
+                netHandler.onInactive(connection);
+            }
         }
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             connection.addInput((byte[]) msg);
+
+            if (netHandler != null) {
+                netHandler.onRead(connection);
+            }
         }
 
         @Override
@@ -107,10 +120,11 @@ public class Client extends Thread {
             Channel channel = ctx.channel();
             LogCore.client.error("exceptionCaught address:{} id:{} error:{} {}", channel.remoteAddress(),
                     connection.getId(), cause.getClass().getName(), cause.getMessage());
-        }
 
-        public ChannelConnection getConnection() {
-            return connection;
+
+            if (netHandler != null) {
+                netHandler.onException(connection, cause);
+            }
         }
     }
 }

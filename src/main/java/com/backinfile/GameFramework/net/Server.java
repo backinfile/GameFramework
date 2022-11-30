@@ -9,22 +9,20 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 public class Server extends Thread {
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final int port;
     private static final AtomicLong idMax = new AtomicLong(1);
-    private final Supplier<ServerHandler> handlerSupplier;
+    private final INetHandler netHandler;
 
     public Server(int port) {
         this(null, port);
     }
 
-    public Server(Supplier<ServerHandler> handlerSupplier, int port) {
-        this.handlerSupplier = handlerSupplier != null ? handlerSupplier : ServerHandler::new;
+    public Server(INetHandler netHandler, int port) {
+        this.netHandler = netHandler;
         this.port = port;
-        idMax.getAndSet(1);
     }
 
     @Override
@@ -49,7 +47,7 @@ public class Server extends Thread {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) {
                             ChannelPipeline pipeline = socketChannel.pipeline();
-                            pipeline.addLast(new Decoder(), new Encoder(), handlerSupplier.get());
+                            pipeline.addLast(new Decoder(), new Encoder(), new ServerHandler(netHandler));
                         }
                     });
 
@@ -71,25 +69,42 @@ public class Server extends Thread {
     }
 
 
-    public static class ServerHandler extends ChannelInboundHandlerAdapter {
+    private static final class ServerHandler extends ChannelInboundHandlerAdapter {
         protected ChannelConnection connection;
+        private final INetHandler netHandler;
+
+        private ServerHandler(INetHandler netHandler) {
+            this.netHandler = netHandler;
+        }
 
         @Override
         public void channelActive(ChannelHandlerContext ctx) {
             Channel channel = ctx.channel();
             connection = new ChannelConnection(idMax.getAndIncrement(), channel);
             LogCore.server.info("channelActive address:{} id:{}", channel.remoteAddress(), connection.getId());
+
+            if (netHandler != null) {
+                netHandler.onActive(connection);
+            }
         }
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             connection.addInput((byte[]) msg);
+
+            if (netHandler != null) {
+                netHandler.onRead(connection);
+            }
         }
 
         @Override
         public void channelInactive(ChannelHandlerContext ctx) {
             Channel channel = ctx.channel();
             LogCore.server.info("channelInactive address:{} id:{}", channel.remoteAddress(), connection.getId());
+
+            if (netHandler != null) {
+                netHandler.onInactive(connection);
+            }
         }
 
         @Override
@@ -97,10 +112,10 @@ public class Server extends Thread {
             Channel channel = ctx.channel();
             LogCore.server.error("exceptionCaught address:{} id:{} error:{} {}", channel.remoteAddress(),
                     connection.getId(), cause.getClass().getName(), cause.getMessage());
-        }
 
-        public ChannelConnection getConnection() {
-            return connection;
+            if (netHandler != null) {
+                netHandler.onException(connection, cause);
+            }
         }
     }
 }
